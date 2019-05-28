@@ -1,5 +1,5 @@
 {
-  "name": "dirty-forms",
+  "name": "dirty-form",
   "version": "0.1.0",
   "description": "A lightweight plugin to prevent losing data when editing forms. No dependencies.",
   "main": "dirty-forms.js",
@@ -12,7 +12,7 @@
   },
   "keywords": [
     "javascript",
-    "dirty forms",
+    "dirty form",
     "dirty",
     "form",
     "areYouSure",
