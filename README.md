@@ -18,7 +18,7 @@ yarn add dirty-form
 
 ## Setup
 
-```
+```javascript
 import DirtyForm from 'dirty-form'
 
 let form = document.querySelector('#form')
