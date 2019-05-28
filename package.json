@@ -2,9 +2,12 @@
   "name": "dirty-form",
   "version": "0.1.0",
   "description": "A lightweight plugin to prevent losing data when editing forms. No dependencies.",
-  "main": "dirty-form.js",
+  "main": "dist/dirty-form.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:dev": "webpack",
+    "build:watch": "webpack --watch",
+    "build:prod": "NODE_ENV=production webpack",
+    "build:all": "npm run build:dev && npm run build:prod"
   },
   "repository": {
     "type": "git",
@@ -23,5 +26,16 @@
   "bugs": {
     "url": "https://github.com/kirillplatonov/dirty-forms/issues"
   },
-  "homepage": "https://github.com/kirillplatonov/dirty-forms#readme"
+  "homepage": "https://github.com/kirillplatonov/dirty-forms#readme",
+  "devDependencies": {
+    "@babel/core": "^7.4.5",
+    "@babel/preset-env": "^7.4.5",
+    "babel-loader": "^8.0.6",
+    "cross-env": "^5.2.0",
+    "webpack": "^4.32.2",
+    "webpack-cli": "^3.3.2"
+  },
+  "dependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.4.4"
+  }
 }
