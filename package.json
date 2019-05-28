@@ -2,7 +2,7 @@
   "name": "dirty-form",
   "version": "0.1.0",
   "description": "A lightweight plugin to prevent losing data when editing forms. No dependencies.",
-  "main": "dirty-forms.js",
+  "main": "dirty-form.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
