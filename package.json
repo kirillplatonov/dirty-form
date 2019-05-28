@@ -1,0 +1,27 @@
+{
+  "name": "dirty-forms",
+  "version": "0.1.0",
+  "description": "A lightweight plugin to prevent losing data when editing forms. No dependencies.",
+  "main": "dirty-forms.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kirillplatonov/dirty-forms.git"
+  },
+  "keywords": [
+    "javascript",
+    "dirty forms",
+    "dirty",
+    "form",
+    "areYouSure",
+    "lightweight",
+  ],
+  "author": "Kirill Platonov <mail@kirillplatonov.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kirillplatonov/dirty-forms/issues"
+  },
+  "homepage": "https://github.com/kirillplatonov/dirty-forms#readme"
+}
