@@ -4,13 +4,13 @@
 
 ## Install
 
-You can get it via `npm`.
+You can get it via `npm`:
 
 ```
 npm install dirty-form --save
 ```
 
-Or `yarn`.
+Or `yarn`:
 
 ```
 yarn add dirty-form
