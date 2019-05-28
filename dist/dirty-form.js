@@ -98,33 +98,30 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ (function(module, exports) {
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 var DirtyForm =
 /*#__PURE__*/
 function () {
   function DirtyForm(form) {
-    var _this = this;
-
     _classCallCheck(this, DirtyForm);
-
-    _defineProperty(this, "checkValue", function (event) {
-      var field = event.target;
-
-      if (_this.initialValues[field.name] != field.value) {
-        _this.isDirty = true;
-      }
-    });
 
     this.form = form;
     this.isDirty = false;
     this.initialValues = {};
+    this.fields = [].concat(_toConsumableArray(this.form.elements), _toConsumableArray(this.form.querySelectorAll('trix-editor')));
     this.setupFields();
     this.setFormHandlers();
   }
@@ -132,34 +129,47 @@ function () {
   _createClass(DirtyForm, [{
     key: "setupFields",
     value: function setupFields() {
-      var _this2 = this;
+      var _this = this;
 
-      this.form.elements.forEach(function (field) {
-        if (!field.name || field.type == 'submit' || field.type == 'button') {
+      this.fields.forEach(function (field) {
+        if (!field.name || field.type == 'submit' || field.type == 'button' || field.type == 'hidden') {
           return;
         } // Save initial values
 
 
-        _this2.initialValues[field.name] = field.value; // Set handlers
+        _this.initialValues[field.name] = field.value; // Set handlers
 
-        field.addEventListener('change', _this2.checkValue);
-        field.addEventListener('input', _this2.checkValue);
+        field.addEventListener('change', _this.checkValue.bind(_this));
+        field.addEventListener('input', _this.checkValue.bind(_this));
+
+        if (field.nodeName == 'TRIX-EDITOR') {
+          field.addEventListener('trix-change', _this.checkValue.bind(_this));
+        }
       });
     }
   }, {
     key: "setFormHandlers",
     value: function setFormHandlers() {
-      var _this3 = this;
+      var _this2 = this;
 
       window.addEventListener('submit', function () {
-        _this3.isDirty = false;
+        _this2.isDirty = false;
       });
 
       window.onbeforeunload = function () {
-        if (_this3.isDirty) {
+        if (_this2.isDirty) {
           return 'You have unsaved changes!';
         }
       };
+    }
+  }, {
+    key: "checkValue",
+    value: function checkValue(event) {
+      var field = event.target;
+
+      if (this.initialValues[field.name] != field.value) {
+        this.isDirty = true;
+      }
     }
   }]);
 

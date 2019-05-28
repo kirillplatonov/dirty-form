@@ -3,14 +3,18 @@ class DirtyForm {
     this.form = form;
     this.isDirty = false;
     this.initialValues = {};
+    this.fields = [
+      ...this.form.elements,
+      ...this.form.querySelectorAll('trix-editor')
+    ]
 
     this.setupFields();
     this.setFormHandlers();
   }
 
   setupFields() {
-    this.form.elements.forEach((field) => {
-      if (!field.name || field.type == 'submit' || field.type == 'button') {
+    this.fields.forEach(field => {
+      if (!field.name || field.type == 'submit' || field.type == 'button' || field.type == 'hidden') {
         return;
       }
 
@@ -18,8 +22,11 @@ class DirtyForm {
       this.initialValues[field.name] = field.value;
 
       // Set handlers
-      field.addEventListener('change', this.checkValue);
-      field.addEventListener('input', this.checkValue);
+      field.addEventListener('change', this.checkValue.bind(this));
+      field.addEventListener('input', this.checkValue.bind(this));
+      if (field.nodeName == 'TRIX-EDITOR') {
+        field.addEventListener('trix-change', this.checkValue.bind(this));
+      }
     })
   }
 
@@ -34,7 +41,7 @@ class DirtyForm {
     };
   }
 
-  checkValue = (event) => {
+  checkValue(event) {
     let field = event.target;
     if (this.initialValues[field.name] != field.value) {
       this.isDirty = true;
