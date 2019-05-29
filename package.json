@@ -1,6 +1,6 @@
 {
   "name": "dirty-form",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "A lightweight plugin to prevent losing data when editing forms. No dependencies.",
   "main": "dist/dirty-form.js",
   "files": [
