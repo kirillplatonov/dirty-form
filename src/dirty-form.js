@@ -32,20 +32,25 @@ class DirtyForm {
   }
 
   setFormHandlers() {
-    window.addEventListener('submit', () => {
-      this.isDirty = false;
-    });
-    window.onbeforeunload = () => {
-      if (this.isDirty) {
-        return 'You have unsaved changes!';
-      }
-    };
+    window.addEventListener('submit', this.handleSubmit.bind(this));
+    this.form.addEventListener('submit', this.handleSubmit.bind(this));
+    window.onbeforeunload = this.handleUnload.bind(this);
   }
 
   checkValue(event) {
     let field = event.target;
     if (this.initialValues[field.name] != field.value) {
       this.isDirty = true;
+    }
+  }
+
+  handleSubmit() {
+    this.isDirty = false;
+  }
+
+  handleUnload() {
+    if (this.isDirty) {
+      return 'You have unsaved changes!';
     }
   }
 }
