@@ -139,28 +139,20 @@ function () {
 
         _this.initialValues[field.name] = field.value; // Set handlers
 
-        field.addEventListener('change', _this.checkValue.bind(_this));
-        field.addEventListener('input', _this.checkValue.bind(_this));
-
         if (field.nodeName == 'TRIX-EDITOR') {
           field.addEventListener('trix-change', _this.checkValue.bind(_this));
+        } else {
+          field.addEventListener('change', _this.checkValue.bind(_this));
+          field.addEventListener('input', _this.checkValue.bind(_this));
         }
       });
     }
   }, {
     key: "setFormHandlers",
     value: function setFormHandlers() {
-      var _this2 = this;
-
-      window.addEventListener('submit', function () {
-        _this2.isDirty = false;
-      });
-
-      window.onbeforeunload = function () {
-        if (_this2.isDirty) {
-          return 'You have unsaved changes!';
-        }
-      };
+      window.addEventListener('submit', this.handleSubmit.bind(this));
+      this.form.addEventListener('submit', this.handleSubmit.bind(this));
+      window.onbeforeunload = this.handleUnload.bind(this);
     }
   }, {
     key: "checkValue",
@@ -169,6 +161,18 @@ function () {
 
       if (this.initialValues[field.name] != field.value) {
         this.isDirty = true;
+      }
+    }
+  }, {
+    key: "handleSubmit",
+    value: function handleSubmit() {
+      this.isDirty = false;
+    }
+  }, {
+    key: "handleUnload",
+    value: function handleUnload() {
+      if (this.isDirty) {
+        return 'You have unsaved changes!';
       }
     }
   }]);
