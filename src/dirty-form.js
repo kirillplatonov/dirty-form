@@ -22,10 +22,11 @@ class DirtyForm {
       this.initialValues[field.name] = field.value;
 
       // Set handlers
-      field.addEventListener('change', this.checkValue.bind(this));
-      field.addEventListener('input', this.checkValue.bind(this));
       if (field.nodeName == 'TRIX-EDITOR') {
         field.addEventListener('trix-change', this.checkValue.bind(this));
+      } else {
+        field.addEventListener('change', this.checkValue.bind(this));
+        field.addEventListener('input', this.checkValue.bind(this));
       }
     })
   }
