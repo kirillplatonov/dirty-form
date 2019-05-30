@@ -32,9 +32,25 @@ class DirtyForm {
   }
 
   setFormHandlers() {
+    // Handle submit
     window.addEventListener('submit', this.handleSubmit.bind(this));
     this.form.addEventListener('submit', this.handleSubmit.bind(this));
-    window.onbeforeunload = this.handleUnload.bind(this);
+
+    // Handle leaving page
+    window.onbeforeunload = () => {
+      if (this.isDirty) {
+        return 'You have unsaved changes!';
+      }
+    };
+    if (typeof Turbolinks !== 'undefined') {
+      document.addEventListener('turbolinks:before-visit', (event) => {
+        if (this.isDirty && !confirm('You have unsaved changes!')) {
+          event.preventDefault()
+        } else {
+          this.isDirty = false;
+        }
+      });
+    }
   }
 
   checkValue(event) {
@@ -46,12 +62,6 @@ class DirtyForm {
 
   handleSubmit() {
     this.isDirty = false;
-  }
-
-  handleUnload() {
-    if (this.isDirty) {
-      return 'You have unsaved changes!';
-    }
   }
 }
 

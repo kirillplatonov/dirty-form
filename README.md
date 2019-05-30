@@ -2,6 +2,8 @@
 
 > A lightweight plugin to prevent losing data when editing forms. No dependencies.
 
+It supports [Trix editor](https://trix-editor.org) and [Turbolinks 5](https://github.com/turbolinks/turbolinks).
+
 ## Install
 
 You can get it via `npm`:
@@ -25,7 +27,7 @@ let form = document.querySelector('#form')
 new DirtyForm(form)
 ```
 
-### Stimulus
+### Stimulus example
 
 ```html
 <%= form_with url: posts_path, html: { data: { controller: 'dirty-form' } } do |form| %>

@@ -150,9 +150,27 @@ function () {
   }, {
     key: "setFormHandlers",
     value: function setFormHandlers() {
+      var _this2 = this;
+
+      // Handle submit
       window.addEventListener('submit', this.handleSubmit.bind(this));
-      this.form.addEventListener('submit', this.handleSubmit.bind(this));
-      window.onbeforeunload = this.handleUnload.bind(this);
+      this.form.addEventListener('submit', this.handleSubmit.bind(this)); // Handle leaving page
+
+      window.onbeforeunload = function () {
+        if (_this2.isDirty) {
+          return 'You have unsaved changes!';
+        }
+      };
+
+      if (typeof Turbolinks !== 'undefined') {
+        document.addEventListener('turbolinks:before-visit', function (event) {
+          if (_this2.isDirty && !confirm('You have unsaved changes!')) {
+            event.preventDefault();
+          } else {
+            _this2.isDirty = false;
+          }
+        });
+      }
     }
   }, {
     key: "checkValue",
@@ -167,13 +185,6 @@ function () {
     key: "handleSubmit",
     value: function handleSubmit() {
       this.isDirty = false;
-    }
-  }, {
-    key: "handleUnload",
-    value: function handleUnload() {
-      if (this.isDirty) {
-        return 'You have unsaved changes!';
-      }
     }
   }]);
 
