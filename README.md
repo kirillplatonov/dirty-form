@@ -27,6 +27,14 @@ let form = document.querySelector('#form')
 new DirtyForm(form)
 ```
 
+If you want to customize the message:
+
+```javascript
+new DirtyForm(form, {
+  message: 'You have unsaved changes. Are you sure you want to leave?',
+})
+```
+
 ### Stimulus example
 
 ```html

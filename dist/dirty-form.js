@@ -116,12 +116,15 @@ var DirtyForm =
 /*#__PURE__*/
 function () {
   function DirtyForm(form) {
+    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
     _classCallCheck(this, DirtyForm);
 
     this.form = form;
     this.isDirty = false;
     this.initialValues = {};
     this.fields = [].concat(_toConsumableArray(this.form.elements), _toConsumableArray(this.form.querySelectorAll('trix-editor')));
+    this.message = options['message'] || 'You have unsaved changes!';
     this.setupFields();
     this.setFormHandlers();
   }
@@ -158,13 +161,13 @@ function () {
 
       window.onbeforeunload = function () {
         if (_this2.isDirty) {
-          return 'You have unsaved changes!';
+          return _this2.message;
         }
       };
 
       if (typeof Turbolinks !== 'undefined') {
         document.addEventListener('turbolinks:before-visit', function (event) {
-          if (_this2.isDirty && !confirm('You have unsaved changes!')) {
+          if (_this2.isDirty && !confirm(_this2.message)) {
             event.preventDefault();
           } else {
             _this2.isDirty = false;
