@@ -2,14 +2,17 @@
 
 > A lightweight plugin to prevent losing data when editing forms. No dependencies.
 
-It supports [Trix editor](https://trix-editor.org) and [Turbolinks 5](https://github.com/turbolinks/turbolinks).
+## Integrations
+
+- [Trix editor](https://trix-editor.org)
+- [Turbo](https://github.com/hotwired/turbo)
 
 ## Install
 
 You can get it via `npm`:
 
 ```
-npm install dirty-form --save
+npm install --save dirty-form
 ```
 
 Or `yarn`:
