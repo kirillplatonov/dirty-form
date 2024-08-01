@@ -1,6 +1,4 @@
-lib
-npm-debug.log
-bower_components
-node_modules
-yarn-error.log
+node_modules/
+package-lock.json
 yarn.lock
+*.log
