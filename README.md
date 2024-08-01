@@ -21,9 +21,9 @@ Or `yarn`:
 yarn add dirty-form
 ```
 
-## Setup
+## Track unsaved form changes
 
-```javascript
+```js
 import DirtyForm from 'dirty-form'
 
 let form = document.querySelector('#form')
@@ -32,28 +32,32 @@ new DirtyForm(form)
 
 If you want to customize the message:
 
-```javascript
+```js
 new DirtyForm(form, {
   message: 'You have unsaved changes. Are you sure you want to leave?',
 })
 ```
 
-### Stimulus example
-
-```html
-<%= form_with url: posts_path, html: { data: { controller: 'dirty-form' } } do |form| %>
-  <%= form.text_field :title %>
-<% end %>
-```
+## Track dirty form state to enable/disable submit
 
 ```js
-// dirty_form_controller.js
-import { Controller } from 'stimulus'
 import DirtyForm from 'dirty-form'
 
-export default class extends Controller {
-  connect() {
-    new DirtyForm(this.element)
-  }
-}
+const form = document.getElementById("form");
+const dirtyForm = new DirtyForm(form, {
+  onDirty: () => {
+    form.querySelector("input[type=submit]").removeAttribute("disabled");
+  },
+});
+
+form.addEventListener("submit", () => {
+  dirtyForm.disconnect();
+});
+```
+
+```html
+<form action="second.html" method="post" id="form">
+  <input type="text" name="name">
+  <input type="submit" value="Submit" disabled>
+</form>
 ```
