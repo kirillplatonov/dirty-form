@@ -8,7 +8,7 @@
         const dirtyForm = new DirtyForm(form, {
           onDirty: () => {
             form.querySelector("input[type=submit]").removeAttribute("disabled");
-          },
+          }
         });
 
         form.addEventListener("submit", () => {

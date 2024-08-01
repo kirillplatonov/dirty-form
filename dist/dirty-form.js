@@ -31,12 +31,16 @@
       this.message = options['message'] || 'You have unsaved changes!';
 
       this.setupFieldsTracking();
-      this.setLeavingHandler();
+      if (!options['skipLeavingTracking']) {
+        this.setLeavingHandler();
+      }
     }
 
     disconnect() {
       this.removeFieldsTracking();
-      this.removeLeavingHandler();
+      if (!options['skipLeavingTracking']) {
+        this.removeLeavingHandler();
+      }
     }
 
     setupFieldsTracking() {
