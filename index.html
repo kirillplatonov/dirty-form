@@ -1,0 +1,24 @@
+<html>
+  <head>
+    <title>Demo</title>
+    <script src="dist/dirty-form.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById("form");
+        new DirtyForm(form);
+      });
+    </script>
+  </head>
+  <body>
+    <h1>First page</h1>
+    <p>
+      <a href="second.html">Go to second page</a>
+    </p>
+    <div>
+      <form action="second.html" method="post" id="form">
+        <input type="text" name="name">
+        <input type="submit" value="Submit" disabled>
+      </form>
+    </div>
+  </body>
+</html>
