@@ -3,9 +3,17 @@
     <title>Demo</title>
     <script src="dist/dirty-form.js"></script>
     <script>
-      document.addEventListener("DOMContentLoaded", function() {
+      document.addEventListener("DOMContentLoaded", () => {
         const form = document.getElementById("form");
-        new DirtyForm(form);
+        const dirtyForm = new DirtyForm(form, {
+          onDirty: () => {
+            form.querySelector("input[type=submit]").removeAttribute("disabled");
+          },
+        });
+
+        form.addEventListener("submit", () => {
+          dirtyForm.disconnect();
+        });
       });
     </script>
   </head>

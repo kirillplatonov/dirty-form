@@ -11,7 +11,6 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "lint": "eslint src",
     "build": "rollup --c",
     "watch": "rollup -wc",
     "prerelease": "npm run clean && npm run build && git --no-pager diff && echo && npm pack --dry-run",
@@ -39,7 +38,6 @@
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
-    "eslint": "^9.8.0",
     "rollup": "^4.19.1"
   }
 }
