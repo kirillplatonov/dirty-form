@@ -38,9 +38,7 @@
 
     disconnect() {
       this.removeFieldsTracking();
-      if (!options['skipLeavingTracking']) {
-        this.removeLeavingHandler();
-      }
+      this.removeLeavingHandler();
     }
 
     setupFieldsTracking() {
