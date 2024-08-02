@@ -7,7 +7,7 @@ function debounce(func, timeout = 100) {
 }
 
 class DirtyForm {
-  static trackedTags = ['INPUT', 'SELECT', 'TEXTAREA', 'TRIX-EDITOR']
+  static trackedTags = ['INPUT', 'SELECT', 'TEXTAREA']
 
   constructor(form, options = {}) {
     this.form = form
@@ -79,7 +79,8 @@ class DirtyForm {
   }
 
   get fields() {
-    const selector = this.constructor.trackedTags.map(tag => `${tag}[name]`).join(',')
+    let selector = this.constructor.trackedTags.map(tag => `${tag}[name]`).join(',')
+    selector += ',TRIX-EDITOR'
     return Array.from(this.form.querySelectorAll(selector)).filter(field => {
       return field.getAttribute("data-dirty-form") != "false"
     })

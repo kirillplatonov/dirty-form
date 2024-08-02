@@ -1,6 +1,7 @@
 <html>
   <head>
     <title>Demo</title>
+
     <script src="dist/dirty-form.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
@@ -16,6 +17,10 @@
         });
       });
     </script>
+
+    <!-- Trix -->
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.8/dist/trix.css">
+    <script type="text/javascript" src="https://unpkg.com/trix@2.0.8/dist/trix.umd.min.js"></script>
   </head>
   <body>
     <h1>First page</h1>
@@ -24,8 +29,25 @@
     </p>
     <div>
       <form action="second.html" method="post" id="form">
-        <input type="text" name="name">
-        <input type="submit" value="Submit" disabled>
+        <p>
+          <input type="text" name="name">
+        </p>
+        <p>
+          <select name="enabled">
+            <option value="true">True</option>
+            <option value="false">False</option>
+          </select>
+        </p>
+        <p>
+          <textarea name="message"></textarea>
+        </p>
+        <p>
+          <input id="x" type="hidden" name="content">
+          <trix-editor input="x"></trix-editor>
+        </p>
+        <p>
+          <input type="submit" value="Submit" disabled>
+        </p>
       </form>
     </div>
   </body>
