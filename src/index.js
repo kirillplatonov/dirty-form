@@ -87,8 +87,10 @@ class DirtyForm {
   }
 
   markAsDirty() {
-    this.isDirty = true
-    if (this.onDirty) this.onDirty()
+    if (!this.isDirty) {
+      this.isDirty = true;
+      if (this.onDirty) this.onDirty();
+    }
   }
 
   // Handlers
