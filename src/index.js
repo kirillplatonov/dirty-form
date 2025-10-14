@@ -16,6 +16,7 @@ class DirtyForm {
     this.onDirty = options['onDirty']
     this.beforeLeave = options['beforeLeave']
     this.message = options['message'] || 'You have unsaved changes!';
+    this.debouncedValueChanged = debounce(this.valueChanged)
 
     this.setupFieldsTracking()
     if (!options['skipLeavingTracking']) {
@@ -34,14 +35,14 @@ class DirtyForm {
 
       switch (field.tagName) {
         case 'TRIX-EDITOR':
-          field.addEventListener('trix-change', debounce(this.valueChanged))
+          field.addEventListener('trix-change', this.debouncedValueChanged)
           break
         case 'SELECT':
-          field.addEventListener('change', debounce(this.valueChanged))
+          field.addEventListener('change', this.debouncedValueChanged)
           break
         default:
-          field.addEventListener('change', debounce(this.valueChanged))
-          field.addEventListener('input', debounce(this.valueChanged))
+          field.addEventListener('change', this.debouncedValueChanged)
+          field.addEventListener('input', this.debouncedValueChanged)
           break
       }
     })
@@ -51,14 +52,14 @@ class DirtyForm {
     this.fields.forEach(field => {
       switch (field.tagName) {
         case 'TRIX-EDITOR':
-          field.removeEventListener('trix-change', this.valueChanged)
+          field.removeEventListener('trix-change', this.debouncedValueChanged)
           break
         case 'SELECT':
-          field.removeEventListener('change', this.valueChanged)
+          field.removeEventListener('change', this.debouncedValueChanged)
           break
         default:
-          field.removeEventListener('change', this.valueChanged)
-          field.removeEventListener('input', this.valueChanged)
+          field.removeEventListener('change', this.debouncedValueChanged)
+          field.removeEventListener('input', this.debouncedValueChanged)
           break
       }
     })
