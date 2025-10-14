@@ -1,5 +1,5 @@
 /*!
- * DirtyForm v0.4.0
+ * DirtyForm v1.0.0
  * Lightweight plugin to track form changes and prevents loosing unsaved edits. No dependencies.
  * https://github.com/kirillplatonov/dirty-forms
  * MIT License
