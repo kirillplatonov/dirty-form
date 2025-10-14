@@ -2,7 +2,7 @@ function debounce(func, timeout = 100) {
   let timer
   return (...args) => {
     clearTimeout(timer)
-    timer = setTimeout(() => { func.apply(this, args) }, timeout)
+    timer = setTimeout(() => { func(...args) }, timeout)
   }
 }
 
@@ -83,7 +83,7 @@ class DirtyForm {
     let selector = this.constructor.trackedTags.map(tag => `${tag}[name]`).join(',')
     selector += ',TRIX-EDITOR'
     return Array.from(this.form.querySelectorAll(selector)).filter(field => {
-      return field.getAttribute("data-dirty-form") != "false"
+      return field.getAttribute("data-dirty-form") !== "false"
     })
   }
 
@@ -98,7 +98,7 @@ class DirtyForm {
 
   valueChanged = (event) => {
     const field = event.target
-    if (this.initialValues[field.name] != field.value) {
+    if (this.initialValues[field.name] !== field.value) {
       this.markAsDirty()
     }
   }

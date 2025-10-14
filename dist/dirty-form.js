@@ -49,7 +49,6 @@
   }
 
   function debounce(func) {
-    var _this = this;
     var timeout = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 100;
     var timer;
     return function () {
@@ -58,37 +57,37 @@
       }
       clearTimeout(timer);
       timer = setTimeout(function () {
-        func.apply(_this, args);
+        func.apply(void 0, args);
       }, timeout);
     };
   }
   var DirtyForm = /*#__PURE__*/function () {
     function DirtyForm(form) {
-      var _this2 = this;
+      var _this = this;
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
       _classCallCheck(this, DirtyForm);
       // Handlers
       _defineProperty(this, "valueChanged", function (event) {
         var field = event.target;
-        if (_this2.initialValues[field.name] != field.value) {
-          _this2.markAsDirty();
+        if (_this.initialValues[field.name] !== field.value) {
+          _this.markAsDirty();
         }
       });
       _defineProperty(this, "beforeUnload", function (event) {
-        if (_this2.isDirty) {
+        if (_this.isDirty) {
           event.preventDefault();
-          event.returnValue = _this2.message;
+          event.returnValue = _this.message;
         }
       });
       _defineProperty(this, "onLeave", function (event) {
-        if (_this2.isDirty) {
-          if (confirm(_this2.message)) {
-            if (_this2.beforeLeave) _this2.beforeLeave();
+        if (_this.isDirty) {
+          if (confirm(_this.message)) {
+            if (_this.beforeLeave) _this.beforeLeave();
           } else {
             event.preventDefault();
           }
         } else {
-          _this2.isDirty = false;
+          _this.isDirty = false;
         }
       });
       this.form = form;
@@ -112,19 +111,19 @@
     }, {
       key: "setupFieldsTracking",
       value: function setupFieldsTracking() {
-        var _this3 = this;
+        var _this2 = this;
         this.fields.forEach(function (field) {
-          _this3.initialValues[field.name] = field.value;
+          _this2.initialValues[field.name] = field.value;
           switch (field.tagName) {
             case 'TRIX-EDITOR':
-              field.addEventListener('trix-change', _this3.debouncedValueChanged);
+              field.addEventListener('trix-change', _this2.debouncedValueChanged);
               break;
             case 'SELECT':
-              field.addEventListener('change', _this3.debouncedValueChanged);
+              field.addEventListener('change', _this2.debouncedValueChanged);
               break;
             default:
-              field.addEventListener('change', _this3.debouncedValueChanged);
-              field.addEventListener('input', _this3.debouncedValueChanged);
+              field.addEventListener('change', _this2.debouncedValueChanged);
+              field.addEventListener('input', _this2.debouncedValueChanged);
               break;
           }
         });
@@ -132,18 +131,18 @@
     }, {
       key: "removeFieldsTracking",
       value: function removeFieldsTracking() {
-        var _this4 = this;
+        var _this3 = this;
         this.fields.forEach(function (field) {
           switch (field.tagName) {
             case 'TRIX-EDITOR':
-              field.removeEventListener('trix-change', _this4.debouncedValueChanged);
+              field.removeEventListener('trix-change', _this3.debouncedValueChanged);
               break;
             case 'SELECT':
-              field.removeEventListener('change', _this4.debouncedValueChanged);
+              field.removeEventListener('change', _this3.debouncedValueChanged);
               break;
             default:
-              field.removeEventListener('change', _this4.debouncedValueChanged);
-              field.removeEventListener('input', _this4.debouncedValueChanged);
+              field.removeEventListener('change', _this3.debouncedValueChanged);
+              field.removeEventListener('input', _this3.debouncedValueChanged);
               break;
           }
         });
@@ -172,7 +171,7 @@
         }).join(',');
         selector += ',TRIX-EDITOR';
         return Array.from(this.form.querySelectorAll(selector)).filter(function (field) {
-          return field.getAttribute("data-dirty-form") != "false";
+          return field.getAttribute("data-dirty-form") !== "false";
         });
       }
     }, {
