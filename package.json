@@ -1,7 +1,7 @@
 {
   "name": "dirty-form",
   "version": "0.4.0",
-  "description": "Lightweight plugin to track form changes and prevent navigation with unsaved edits. No dependencies.",
+  "description": "Lightweight plugin to track form changes and prevents loosing unsaved edits. No dependencies.",
   "keywords": [
     "javascript",
     "dirty form",

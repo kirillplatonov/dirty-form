@@ -1,6 +1,6 @@
 # dirty-form
 
-Lightweight plugin to track form changes and prevent navigation with unsaved edits. No dependencies.
+Lightweight plugin to track form changes and prevents loosing unsaved edits. No dependencies.
 
 ## Integrations
 
