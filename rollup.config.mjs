@@ -1,6 +1,4 @@
-import resolve from "@rollup/plugin-node-resolve";
-import commonjs from "@rollup/plugin-commonjs";
-import buble from "@rollup/plugin-buble";
+import babel from "@rollup/plugin-babel";
 import terser from "@rollup/plugin-terser";
 import pkg from "./package.json" with { type: "json" };
 
@@ -17,17 +15,18 @@ const minBanner = `/*! DirtyForm v${pkg.version} | ${pkg.license} License */`;
 
 export default {
   input: "src/index.js",
+  plugins: [
+    babel({
+      babelHelpers: 'bundled',
+      presets: ['@babel/preset-env']
+    })
+  ],
   output: [
     {
       name: "DirtyForm",
       file: "dist/dirty-form.js",
       format: "umd",
-      banner: banner,
-      plugins: [
-        resolve(),
-        commonjs(),
-        buble()
-      ]
+      banner: banner
     },
     {
       name: "DirtyForm",
@@ -35,19 +34,13 @@ export default {
       format: "umd",
       banner: minBanner,
       plugins: [
-        resolve(),
-        commonjs(),
-        buble(),
         terser()
       ]
     },
     {
       file: "dist/dirty-form.esm.js",
       format: "es",
-      banner: banner,
-      plugins: [
-        buble()
-      ]
+      banner: banner
     }
   ]
 }
