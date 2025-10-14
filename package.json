@@ -1,25 +1,7 @@
 {
   "name": "dirty-form",
   "version": "0.4.0",
-  "homepage": "https://github.com/kirillplatonov/dirty-forms#readme",
   "description": "A lightweight plugin to prevent losing data when editing forms. No dependencies.",
-  "type": "module",
-  "main": "dist/dirty-form.js",
-  "module": "dist/dirty-form.esm.js",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "clean": "rm -rf dist",
-    "build": "rollup --c",
-    "watch": "rollup -wc",
-    "prerelease": "npm run clean && npm run build && git --no-pager diff && echo && npm pack --dry-run",
-    "release": "npm publish"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/kirillplatonov/dirty-forms"
-  },
   "keywords": [
     "javascript",
     "dirty form",
@@ -28,15 +10,32 @@
     "areYouSure",
     "lightweight"
   ],
-  "author": "Kirill Platonov <mail@kirillplatonov.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kirillplatonov/dirty-forms"
+  },
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/kirillplatonov/dirty-forms/issues"
+  "author": "Kirill Platonov <mail@kirillplatonov.com>",
+  "type": "module",
+  "main": "dist/dirty-form.js",
+  "module": "dist/dirty-form.esm.js",
+  "files": [
+    "dist",
+    "MIT-LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && rollup --c",
+    "dev": "rollup -wc",
+    "prepublishOnly": "npm run build",
+    "prerelease": "git --no-pager diff && echo && npm pack --dry-run",
+    "release": "npm publish"
   },
   "devDependencies": {
     "@rollup/plugin-buble": "^1.0.3",
-    "@rollup/plugin-commonjs": "^26.0.1",
-    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^0.4.4",
     "rollup": "^4.19.1"
   }
