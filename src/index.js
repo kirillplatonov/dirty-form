@@ -31,7 +31,22 @@ class DirtyForm {
 
   setupFieldsTracking() {
     this.fields.forEach(field => {
-      this.initialValues[field.name] = field.value
+      // Store initial state based on field type
+      if (field.type === 'radio') {
+        // For radio buttons, only store once per group
+        if (!this.initialValues.hasOwnProperty(field.name)) {
+          // Find which radio button is checked in this group
+          const escapedName = CSS.escape(field.name);
+          const checkedRadio = this.form.querySelector(`input[type="radio"][name="${escapedName}"]:checked`);
+          this.initialValues[field.name] = checkedRadio ? checkedRadio.value : '';
+        }
+      } else if (field.type === 'checkbox') {
+        // For checkboxes, store the checked state with a unique key
+        const key = `${field.name}:${field.value}`;
+        this.initialValues[key] = field.checked;
+      } else {
+        this.initialValues[field.name] = field.value;
+      }
 
       switch (field.tagName) {
         case 'TRIX-EDITOR':
@@ -98,8 +113,22 @@ class DirtyForm {
 
   valueChanged = (event) => {
     const field = event.target
-    if (this.initialValues[field.name] !== field.value) {
-      this.markAsDirty()
+
+    if (field.type === 'radio') {
+      // For radio buttons, check if the checked value for this group changed
+      if (this.initialValues[field.name] !== field.value) {
+        this.markAsDirty()
+      }
+    } else if (field.type === 'checkbox') {
+      // For checkboxes, check if the checked state changed
+      const key = `${field.name}:${field.value}`
+      if (this.initialValues[key] !== field.checked) {
+        this.markAsDirty()
+      }
+    } else {
+      if (this.initialValues[field.name] !== field.value) {
+        this.markAsDirty()
+      }
     }
   }
 

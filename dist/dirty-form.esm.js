@@ -63,8 +63,21 @@ var DirtyForm = /*#__PURE__*/function () {
     // Handlers
     _defineProperty(this, "valueChanged", function (event) {
       var field = event.target;
-      if (_this.initialValues[field.name] !== field.value) {
-        _this.markAsDirty();
+      if (field.type === 'radio') {
+        // For radio buttons, check if the checked value for this group changed
+        if (_this.initialValues[field.name] !== field.value) {
+          _this.markAsDirty();
+        }
+      } else if (field.type === 'checkbox') {
+        // For checkboxes, check if the checked state changed
+        var key = "".concat(field.name, ":").concat(field.value);
+        if (_this.initialValues[key] !== field.checked) {
+          _this.markAsDirty();
+        }
+      } else {
+        if (_this.initialValues[field.name] !== field.value) {
+          _this.markAsDirty();
+        }
       }
     });
     _defineProperty(this, "beforeUnload", function (event) {
@@ -107,7 +120,22 @@ var DirtyForm = /*#__PURE__*/function () {
     value: function setupFieldsTracking() {
       var _this2 = this;
       this.fields.forEach(function (field) {
-        _this2.initialValues[field.name] = field.value;
+        // Store initial state based on field type
+        if (field.type === 'radio') {
+          // For radio buttons, only store once per group
+          if (!_this2.initialValues.hasOwnProperty(field.name)) {
+            // Find which radio button is checked in this group
+            var escapedName = CSS.escape(field.name);
+            var checkedRadio = _this2.form.querySelector("input[type=\"radio\"][name=\"".concat(escapedName, "\"]:checked"));
+            _this2.initialValues[field.name] = checkedRadio ? checkedRadio.value : '';
+          }
+        } else if (field.type === 'checkbox') {
+          // For checkboxes, store the checked state with a unique key
+          var key = "".concat(field.name, ":").concat(field.value);
+          _this2.initialValues[key] = field.checked;
+        } else {
+          _this2.initialValues[field.name] = field.value;
+        }
         switch (field.tagName) {
           case 'TRIX-EDITOR':
             field.addEventListener('trix-change', _this2.debouncedValueChanged);
