@@ -8,12 +8,16 @@ dirty-form is a zero-dependency JavaScript library that tracks form edits and wa
 
 ## Commands
 
-- `npm run build` — clean `dist/` and build with Rollup (config is `rollup.config.mjs`)
-- `npm run dev` — Rollup watch mode
-- `npm run clean` — remove `dist/`
-- `npm run release` — publishes to npm; `prepublishOnly` runs a build, and `prerelease` prints the diff and a `npm pack --dry-run` preview
+Package manager is **pnpm** (pinned via the `packageManager` field in `package.json`).
 
-There is no automated test suite. Smoke-test changes by opening `demo/index.html` in a browser (it links to `demo/second.html`) and verifying the warning fires on edits and the callbacks wire up correctly.
+- `pnpm build` — clean `dist/` and build with Rollup (config is `rollup.config.mjs`)
+- `pnpm dev` — Rollup watch mode
+- `pnpm clean` — remove `dist/`
+- `pnpm test` — run the Vitest suite once
+- `pnpm test:watch` — Vitest watch mode
+- `pnpm release` — publishes to npm; `prepublishOnly` runs a build, and `prerelease` prints the diff and a `npm pack --dry-run` preview
+
+Tests run under Vitest + jsdom against `src/index.js` directly (not the Rollup bundle). Config lives in `vitest.config.js`; `test/setup.js` polyfills `CSS.escape` because jsdom does not expose the `CSS` global. For UI-level verification, smoke-test via `demo/index.html` in a browser (links to `demo/second.html`).
 
 ## Architecture
 

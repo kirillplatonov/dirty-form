@@ -30,7 +30,9 @@
     "dev": "rollup -wc",
     "prepublishOnly": "npm run build",
     "prerelease": "git --no-pager diff && echo && npm pack --dry-run",
-    "release": "npm publish"
+    "release": "npm publish",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@babel/core": "^7.28.4",
@@ -40,6 +42,9 @@
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^0.4.4",
-    "rollup": "^4.19.1"
-  }
+    "jsdom": "^29.0.2",
+    "rollup": "^4.19.1",
+    "vitest": "^4.1.5"
+  },
+  "packageManager": "pnpm@10.29.2+sha512.bef43fa759d91fd2da4b319a5a0d13ef7a45bb985a3d7342058470f9d2051a3ba8674e629672654686ef9443ad13a82da2beb9eeb3e0221c87b8154fff9d74b8"
 }

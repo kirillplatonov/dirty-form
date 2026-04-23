@@ -108,6 +108,18 @@ new DirtyForm(form, {
 - **`disconnect()`** — remove all event listeners and stop tracking. Typically called on form `submit` so the unsaved-changes prompt doesn't interrupt a legitimate submission.
 - **`isDirty`** (property) — `true` once any tracked field has diverged from its initial value.
 
+## Development
+
+This repo uses [pnpm](https://pnpm.io).
+
+```
+pnpm install
+pnpm test          # run the Vitest + jsdom suite once
+pnpm test:watch    # Vitest watch mode
+pnpm build         # bundle to dist/ with Rollup
+pnpm dev           # Rollup watch mode
+```
+
 ## License
 
 [MIT](MIT-LICENSE)
