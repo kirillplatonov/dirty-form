@@ -16,13 +16,13 @@ class DirtyForm {
     this.isDirty = false
     this.initialValues = {}
     this.initialCheckboxState = new WeakMap()
-    this.onDirty = options['onDirty']
-    this.beforeLeave = options['beforeLeave']
-    this.message = options['message'] || 'You have unsaved changes!';
+    this.onDirty = options.onDirty
+    this.beforeLeave = options.beforeLeave
+    this.message = options.message || 'You have unsaved changes!'
     this.debouncedValueChanged = debounce(this.valueChanged)
 
     this.setupFieldsTracking()
-    if (!options['skipLeavingTracking']) {
+    if (!options.skipLeavingTracking) {
       this.setLeavingHandler()
     }
   }
@@ -39,66 +39,53 @@ class DirtyForm {
       if (field.type === 'radio') {
         // For radio buttons, only store once per group
         if (!this.initialValues.hasOwnProperty(field.name)) {
-          // Find which radio button is checked in this group
-          const escapedName = CSS.escape(field.name);
-          const checkedRadio = this.form.querySelector(`input[type="radio"][name="${escapedName}"]:checked`);
-          this.initialValues[field.name] = checkedRadio ? checkedRadio.value : '';
+          const escapedName = CSS.escape(field.name)
+          const checkedRadio = this.form.querySelector(`input[type="radio"][name="${escapedName}"]:checked`)
+          this.initialValues[field.name] = checkedRadio ? checkedRadio.value : ''
         }
       } else if (field.type === 'checkbox') {
         // Key by element identity so same-name checkboxes (including
         // ones that default to value="on") never collide
-        this.initialCheckboxState.set(field, field.checked);
+        this.initialCheckboxState.set(field, field.checked)
       } else if (field.type === 'file') {
         // `field.value` is the "C:\fakepath\..." string — compare file count instead
-        this.initialValues[field.name] = field.files?.length ?? 0;
+        this.initialValues[field.name] = field.files?.length ?? 0
       } else {
-        this.initialValues[field.name] = field.value;
+        this.initialValues[field.name] = field.value
       }
 
-      switch (field.tagName) {
-        case 'TRIX-EDITOR':
-          field.addEventListener('trix-change', this.debouncedValueChanged)
-          break
-        case 'SELECT':
-          field.addEventListener('change', this.debouncedValueChanged)
-          break
-        default:
-          field.addEventListener('change', this.debouncedValueChanged)
-          field.addEventListener('input', this.debouncedValueChanged)
-          break
-      }
+      this.eventsFor(field).forEach(type => {
+        field.addEventListener(type, this.debouncedValueChanged)
+      })
     })
   }
 
   removeFieldsTracking() {
     this.fields.forEach(field => {
-      switch (field.tagName) {
-        case 'TRIX-EDITOR':
-          field.removeEventListener('trix-change', this.debouncedValueChanged)
-          break
-        case 'SELECT':
-          field.removeEventListener('change', this.debouncedValueChanged)
-          break
-        default:
-          field.removeEventListener('change', this.debouncedValueChanged)
-          field.removeEventListener('input', this.debouncedValueChanged)
-          break
-      }
+      this.eventsFor(field).forEach(type => {
+        field.removeEventListener(type, this.debouncedValueChanged)
+      })
     })
   }
 
+  eventsFor(field) {
+    if (field.tagName === 'TRIX-EDITOR') return ['trix-change']
+    if (field.tagName === 'SELECT') return ['change']
+    return ['change', 'input']
+  }
+
   setLeavingHandler() {
-    window.addEventListener('beforeunload', this.beforeUnload);
+    window.addEventListener('beforeunload', this.beforeUnload)
     document.addEventListener('turbo:before-visit', this.onLeave)
   }
 
   removeLeavingHandler() {
-    window.removeEventListener('beforeunload', this.beforeUnload);
+    window.removeEventListener('beforeunload', this.beforeUnload)
     document.removeEventListener('turbo:before-visit', this.onLeave)
   }
 
   get fields() {
-    let selector = this.constructor.trackedTags.map(tag => `${tag}[name]`).join(',')
+    let selector = DirtyForm.trackedTags.map(tag => `${tag}[name]`).join(',')
     selector += ',TRIX-EDITOR'
     return Array.from(this.form.querySelectorAll(selector)).filter(field => {
       return field.getAttribute("data-dirty-form") !== "false"
@@ -107,8 +94,8 @@ class DirtyForm {
 
   markAsDirty() {
     if (!this.isDirty) {
-      this.isDirty = true;
-      if (this.onDirty) this.onDirty();
+      this.isDirty = true
+      this.onDirty?.()
     }
   }
 
@@ -147,7 +134,7 @@ class DirtyForm {
   onLeave = (event) => {
     if (this.isDirty) {
       if (confirm(this.message)) {
-        if (this.beforeLeave) this.beforeLeave()
+        this.beforeLeave?.()
       } else {
         event.preventDefault()
       }
