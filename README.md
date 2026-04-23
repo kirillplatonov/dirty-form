@@ -1,15 +1,19 @@
 # dirty-form
 
-Lightweight plugin to track form changes and prevents loosing unsaved edits. No dependencies.
+Lightweight plugin to track form changes and prevent losing unsaved edits. No dependencies.
 
 ## Integrations
 
 - [Trix editor](https://trix-editor.org)
 - [Turbo](https://github.com/hotwired/turbo)
 
+## Supported fields
+
+Any `<input>`, `<select>`, or `<textarea>` with a `name` attribute is tracked, along with `<trix-editor>` elements. Radio groups are tracked by group name, and each checkbox is tracked independently.
+
 ## Install
 
-You can get it via `npm`:
+Via `npm`:
 
 ```
 npm install --save dirty-form
@@ -19,6 +23,18 @@ Or `yarn`:
 
 ```
 yarn add dirty-form
+```
+
+Or `pnpm`:
+
+```
+pnpm add dirty-form
+```
+
+Or via CDN — the UMD bundle exposes a `DirtyForm` global:
+
+```html
+<script src="https://unpkg.com/dirty-form/dist/dirty-form.min.js"></script>
 ```
 
 ## Usage
@@ -56,6 +72,8 @@ form.addEventListener("submit", () => {
 </form>
 ```
 
+Calling `disconnect()` on submit prevents the unsaved-changes prompt from firing during the legitimate form submission.
+
 ### Excluding fields from tracking
 
 Add `data-dirty-form="false"` to fields you want to exclude:
@@ -68,20 +86,28 @@ Add `data-dirty-form="false"` to fields you want to exclude:
 
 ```js
 new DirtyForm(form, {
-  // Custom message shown to users
+  // Message shown in the browser's native beforeunload prompt and
+  // Turbo's confirm() dialog. Default: 'You have unsaved changes!'
   message: 'You have unsaved changes. Are you sure you want to leave?',
 
-  // Callback fired once when form becomes dirty
+  // Fired once, the first time the form becomes dirty
   onDirty: () => { /* ... */ },
 
-  // Callback fired before Turbo navigation (if using Turbo)
+  // Turbo only: fired after the user confirms leaving the page.
+  // There is no equivalent for beforeunload — browsers don't allow
+  // callbacks to run during that event.
   beforeLeave: () => { /* ... */ },
 
-  // Disable navigation prevention (only track dirty state)
+  // Skip both navigation prompts; only track dirty state
   skipLeavingTracking: true,
 })
 ```
 
 ## API
 
-**`disconnect()`** - Remove all event listeners and stop tracking
+- **`disconnect()`** — remove all event listeners and stop tracking. Typically called on form `submit` so the unsaved-changes prompt doesn't interrupt a legitimate submission.
+- **`isDirty`** (property) — `true` once any tracked field has diverged from its initial value.
+
+## License
+
+[MIT](MIT-LICENSE)

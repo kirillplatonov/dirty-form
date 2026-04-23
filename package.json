@@ -1,7 +1,7 @@
 {
   "name": "dirty-form",
   "version": "1.0.0",
-  "description": "Lightweight plugin to track form changes and prevents loosing unsaved edits. No dependencies.",
+  "description": "Lightweight plugin to track form changes and prevent losing unsaved edits. No dependencies.",
   "keywords": [
     "javascript",
     "dirty form",
@@ -12,7 +12,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/kirillplatonov/dirty-forms"
+    "url": "https://github.com/kirillplatonov/dirty-form"
   },
   "license": "MIT",
   "author": "Kirill Platonov <mail@kirillplatonov.com>",
