@@ -74,18 +74,17 @@ describe('DirtyForm', () => {
       expect(dirty.initialValues.size).toBe('')
     })
 
-    it('stores each checkbox as name:value -> checked boolean', () => {
+    it('stores the initial checked state per checkbox element', () => {
       const form = buildForm(`
         <input type="checkbox" name="features" value="a" checked>
         <input type="checkbox" name="features" value="b">
         <input type="checkbox" name="newsletter" value="yes">
       `)
       const dirty = create(form)
-      expect(dirty.initialValues).toEqual({
-        'features:a': true,
-        'features:b': false,
-        'newsletter:yes': false
-      })
+      const [a, b, newsletter] = form.querySelectorAll('input')
+      expect(dirty.initialCheckboxState.get(a)).toBe(true)
+      expect(dirty.initialCheckboxState.get(b)).toBe(false)
+      expect(dirty.initialCheckboxState.get(newsletter)).toBe(false)
     })
   })
 
@@ -210,14 +209,33 @@ describe('DirtyForm', () => {
         <input type="checkbox" name="features" value="b">
       `)
       const dirty = create(form)
-      const b = form.querySelector('input[value="b"]')
+      const [a, b] = form.querySelectorAll('input')
 
       b.checked = true
       fire(b, 'change')
       flushDebounce()
 
       expect(dirty.isDirty).toBe(true)
-      expect(dirty.initialValues['features:a']).toBe(true)
+      expect(dirty.initialCheckboxState.get(a)).toBe(true)
+    })
+
+    it('tracks same-name checkboxes without value attributes independently', () => {
+      // Both checkboxes default to value="on" per the HTML spec — string-keyed
+      // storage (name:value) would collide. Element identity avoids that.
+      const form = buildForm(`
+        <input type="checkbox" name="features">
+        <input type="checkbox" name="features" checked>
+      `)
+      const dirty = create(form)
+      const [first, second] = form.querySelectorAll('input')
+
+      expect(dirty.initialCheckboxState.get(first)).toBe(false)
+      expect(dirty.initialCheckboxState.get(second)).toBe(true)
+
+      second.checked = false
+      fire(second, 'change')
+      flushDebounce()
+      expect(dirty.isDirty).toBe(true)
     })
 
     it('marks dirty on the change event for text inputs, not just input', () => {

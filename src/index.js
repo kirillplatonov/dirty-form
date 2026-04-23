@@ -15,6 +15,7 @@ class DirtyForm {
     this.form = form
     this.isDirty = false
     this.initialValues = {}
+    this.initialCheckboxState = new WeakMap()
     this.onDirty = options['onDirty']
     this.beforeLeave = options['beforeLeave']
     this.message = options['message'] || 'You have unsaved changes!';
@@ -44,9 +45,9 @@ class DirtyForm {
           this.initialValues[field.name] = checkedRadio ? checkedRadio.value : '';
         }
       } else if (field.type === 'checkbox') {
-        // For checkboxes, store the checked state with a unique key
-        const key = `${field.name}:${field.value}`;
-        this.initialValues[key] = field.checked;
+        // Key by element identity so same-name checkboxes (including
+        // ones that default to value="on") never collide
+        this.initialCheckboxState.set(field, field.checked);
       } else if (field.type === 'file') {
         // `field.value` is the "C:\fakepath\..." string — compare file count instead
         this.initialValues[field.name] = field.files?.length ?? 0;
@@ -122,9 +123,7 @@ class DirtyForm {
         this.markAsDirty()
       }
     } else if (field.type === 'checkbox') {
-      // For checkboxes, check if the checked state changed
-      const key = `${field.name}:${field.value}`
-      if (this.initialValues[key] !== field.checked) {
+      if (this.initialCheckboxState.get(field) !== field.checked) {
         this.markAsDirty()
       }
     } else if (field.type === 'file') {
