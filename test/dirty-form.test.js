@@ -280,6 +280,31 @@ describe('DirtyForm', () => {
       expect(dirty.isDirty).toBe(true)
     })
 
+    it('marks dirty synchronously when debounce is 0', () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form, { debounce: 0 })
+      const input = form.querySelector('input')
+
+      input.value = 'changed'
+      fire(input, 'input')
+
+      expect(dirty.isDirty).toBe(true)
+    })
+
+    it('respects a custom debounce window', () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form, { debounce: 250 })
+      const input = form.querySelector('input')
+
+      input.value = 'changed'
+      fire(input, 'input')
+      vi.advanceTimersByTime(249)
+      expect(dirty.isDirty).toBe(false)
+
+      vi.advanceTimersByTime(1)
+      expect(dirty.isDirty).toBe(true)
+    })
+
     it('ignores fields with data-dirty-form="false"', () => {
       const form = buildForm(`
         <input type="text" name="tracked" value="a">

@@ -1,4 +1,9 @@
 function debounce(func, timeout = 100) {
+  if (timeout <= 0) {
+    const immediate = (...args) => { func(...args) }
+    immediate.cancel = () => {}
+    return immediate
+  }
   let timer
   const debounced = (...args) => {
     clearTimeout(timer)
@@ -19,7 +24,7 @@ class DirtyForm {
     this.onDirty = options.onDirty
     this.beforeLeave = options.beforeLeave
     this.message = options.message || 'You have unsaved changes!'
-    this.debouncedValueChanged = debounce(this.valueChanged)
+    this.handleChange = debounce(this.valueChanged, options.debounce ?? 100)
 
     this.setupFieldsTracking()
     if (!options.skipLeavingTracking) {
@@ -28,7 +33,7 @@ class DirtyForm {
   }
 
   disconnect() {
-    this.debouncedValueChanged.cancel()
+    this.handleChange.cancel()
     this.removeFieldsTracking()
     this.removeLeavingHandler()
   }
@@ -55,7 +60,7 @@ class DirtyForm {
       }
 
       this.eventsFor(field).forEach(type => {
-        field.addEventListener(type, this.debouncedValueChanged)
+        field.addEventListener(type, this.handleChange)
       })
     })
   }
@@ -63,7 +68,7 @@ class DirtyForm {
   removeFieldsTracking() {
     this.fields.forEach(field => {
       this.eventsFor(field).forEach(type => {
-        field.removeEventListener(type, this.debouncedValueChanged)
+        field.removeEventListener(type, this.handleChange)
       })
     })
   }

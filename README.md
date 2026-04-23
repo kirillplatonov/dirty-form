@@ -100,6 +100,10 @@ new DirtyForm(form, {
 
   // Skip both navigation prompts; only track dirty state
   skipLeavingTracking: true,
+
+  // Milliseconds to debounce change detection. Default: 100.
+  // Set to 0 to check on every event synchronously.
+  debounce: 100,
 })
 ```
 
