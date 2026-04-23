@@ -331,6 +331,20 @@ describe('DirtyForm', () => {
 
       expect(dispatchBeforeUnload().defaultPrevented).toBe(false)
     })
+
+    it('cancels a pending debounced change so it cannot fire after teardown', () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form)
+      const input = form.querySelector('input')
+
+      input.value = 'changed'
+      fire(input, 'input')
+      vi.advanceTimersByTime(DEBOUNCE_MS - 1)
+      dirty.disconnect()
+      vi.advanceTimersByTime(DEBOUNCE_MS)
+
+      expect(dirty.isDirty).toBe(false)
+    })
   })
 
   describe('beforeunload', () => {
@@ -413,6 +427,29 @@ describe('DirtyForm', () => {
     })
   })
 
+  describe('file inputs', () => {
+    it('stores initial file count as 0 for an empty file input', () => {
+      const form = buildForm(`<input type="file" name="avatar">`)
+      const dirty = create(form)
+      expect(dirty.initialValues.avatar).toBe(0)
+    })
+
+    it('marks dirty when a file is selected', () => {
+      const form = buildForm(`<input type="file" name="avatar">`)
+      const dirty = create(form)
+      const input = form.querySelector('input')
+
+      Object.defineProperty(input, 'files', {
+        value: [{ name: 'avatar.png' }],
+        configurable: true,
+      })
+      fire(input, 'change')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(true)
+    })
+  })
+
   describe('Turbo integration', () => {
     it('calls beforeLeave when the user confirms navigation', () => {
       globalThis.Turbo = {}
@@ -489,6 +526,26 @@ describe('DirtyForm', () => {
       document.dispatchEvent(event)
 
       expect(confirmSpy).not.toHaveBeenCalled()
+      confirmSpy.mockRestore()
+    })
+
+    it('handles turbo:before-visit even when Turbo loads after construction', () => {
+      // Turbo is intentionally NOT defined at construction time
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      create(form)
+
+      const input = form.querySelector('input')
+      input.value = 'changed'
+      fire(input, 'input')
+      flushDebounce()
+
+      // Turbo loads lazily and then dispatches a visit event
+      globalThis.Turbo = {}
+      document.dispatchEvent(new Event('turbo:before-visit', { cancelable: true }))
+
+      expect(confirmSpy).toHaveBeenCalledWith('You have unsaved changes!')
       confirmSpy.mockRestore()
     })
   })

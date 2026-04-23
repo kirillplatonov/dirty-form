@@ -1,9 +1,11 @@
 function debounce(func, timeout = 100) {
   let timer
-  return (...args) => {
+  const debounced = (...args) => {
     clearTimeout(timer)
     timer = setTimeout(() => { func(...args) }, timeout)
   }
+  debounced.cancel = () => { clearTimeout(timer) }
+  return debounced
 }
 
 class DirtyForm {
@@ -25,6 +27,7 @@ class DirtyForm {
   }
 
   disconnect() {
+    this.debouncedValueChanged.cancel()
     this.removeFieldsTracking()
     this.removeLeavingHandler()
   }
@@ -44,6 +47,9 @@ class DirtyForm {
         // For checkboxes, store the checked state with a unique key
         const key = `${field.name}:${field.value}`;
         this.initialValues[key] = field.checked;
+      } else if (field.type === 'file') {
+        // `field.value` is the "C:\fakepath\..." string — compare file count instead
+        this.initialValues[field.name] = field.files?.length ?? 0;
       } else {
         this.initialValues[field.name] = field.value;
       }
@@ -82,16 +88,12 @@ class DirtyForm {
 
   setLeavingHandler() {
     window.addEventListener('beforeunload', this.beforeUnload);
-    if (typeof Turbo !== 'undefined') {
-      document.addEventListener('turbo:before-visit', this.onLeave)
-    }
+    document.addEventListener('turbo:before-visit', this.onLeave)
   }
 
   removeLeavingHandler() {
     window.removeEventListener('beforeunload', this.beforeUnload);
-    if (typeof Turbo !== 'undefined') {
-      document.removeEventListener('turbo:before-visit', this.onLeave)
-    }
+    document.removeEventListener('turbo:before-visit', this.onLeave)
   }
 
   get fields() {
@@ -125,6 +127,10 @@ class DirtyForm {
       if (this.initialValues[key] !== field.checked) {
         this.markAsDirty()
       }
+    } else if (field.type === 'file') {
+      if (this.initialValues[field.name] !== (field.files?.length ?? 0)) {
+        this.markAsDirty()
+      }
     } else {
       if (this.initialValues[field.name] !== field.value) {
         this.markAsDirty()
@@ -146,8 +152,6 @@ class DirtyForm {
       } else {
         event.preventDefault()
       }
-    } else {
-      this.isDirty = false
     }
   }
 }
