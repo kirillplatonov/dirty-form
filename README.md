@@ -11,6 +11,8 @@ Lightweight plugin to track form changes and prevent losing unsaved edits. No de
 
 Any `<input>`, `<select>`, or `<textarea>` with a `name` attribute is tracked, along with `<trix-editor>` elements. Radio groups are tracked by group name, and each checkbox is tracked independently.
 
+Fields added to the form after construction are not tracked by default. Pass `watchNewFields: true` to enable a `MutationObserver` that picks up dynamically rendered fields — useful for Turbo Frames, React/Vue-rendered subtrees, or any form that grows over time.
+
 ## Install
 
 Via `npm`:
@@ -101,6 +103,11 @@ new DirtyForm(form, {
 
   // Skip both navigation prompts; only track dirty state
   skipLeavingTracking: true,
+
+  // Observe the form for dynamically added/removed fields and track them
+  // automatically. Default: false (only fields present at construction
+  // time are tracked).
+  watchNewFields: true,
 
   // Milliseconds to debounce change detection. Default: 100.
   // Set to 0 to check on every event synchronously.

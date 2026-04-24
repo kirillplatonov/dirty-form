@@ -594,6 +594,153 @@ describe('DirtyForm', () => {
     })
   })
 
+  describe('watchNewFields', () => {
+    // MutationObserver callbacks fire as microtasks; awaiting a resolved
+    // promise lets them run before we check state.
+    const flushMutations = () => Promise.resolve()
+
+    it('does not track dynamically added fields by default', async () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form)
+
+      const added = document.createElement('input')
+      added.type = 'text'
+      added.name = 'subtitle'
+      form.appendChild(added)
+      await flushMutations()
+
+      added.value = 'changed'
+      fire(added, 'input')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(false)
+    })
+
+    it('tracks a text input added to the form after construction', async () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form, { watchNewFields: true })
+
+      const added = document.createElement('input')
+      added.type = 'text'
+      added.name = 'subtitle'
+      added.value = 'original'
+      form.appendChild(added)
+      await flushMutations()
+
+      added.value = 'changed'
+      fire(added, 'input')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(true)
+    })
+
+    it('tracks fields added inside a wrapper element (Turbo Frame scenario)', async () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form, { watchNewFields: true })
+
+      const wrapper = document.createElement('div')
+      wrapper.innerHTML = `<input type="text" name="subtitle" value="original">`
+      form.appendChild(wrapper)
+      await flushMutations()
+
+      const added = wrapper.querySelector('input')
+      added.value = 'changed'
+      fire(added, 'input')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(true)
+    })
+
+    it('snapshots the initial value of a dynamically-added field', async () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form, { watchNewFields: true })
+
+      const added = document.createElement('input')
+      added.type = 'text'
+      added.name = 'subtitle'
+      added.value = 'server-rendered'
+      form.appendChild(added)
+      await flushMutations()
+
+      // firing input without actually changing the value should not mark dirty
+      fire(added, 'input')
+      flushDebounce()
+      expect(dirty.isDirty).toBe(false)
+    })
+
+    it('honors data-dirty-form="false" on dynamically-added fields', async () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form, { watchNewFields: true })
+
+      const added = document.createElement('input')
+      added.type = 'text'
+      added.name = 'search'
+      added.setAttribute('data-dirty-form', 'false')
+      form.appendChild(added)
+      await flushMutations()
+
+      added.value = 'changed'
+      fire(added, 'input')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(false)
+    })
+
+    it('detaches listeners when a field is removed from the form', async () => {
+      const form = buildForm(`
+        <input type="text" name="a" value="">
+        <input type="text" name="b" value="">
+      `)
+      const dirty = create(form, { watchNewFields: true })
+      const a = form.querySelector('input[name="a"]')
+
+      a.remove()
+      await flushMutations()
+
+      expect(dirty.trackedListeners.some(entry => entry.field === a)).toBe(false)
+    })
+
+    it('tracks a radio group added after construction', async () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form, { watchNewFields: true })
+
+      const wrapper = document.createElement('div')
+      wrapper.innerHTML = `
+        <input type="radio" name="color" value="red" checked>
+        <input type="radio" name="color" value="blue">
+      `
+      form.appendChild(wrapper)
+      await flushMutations()
+
+      expect(dirty._initialValues.color).toBe('red')
+
+      const blue = form.querySelector('input[value="blue"]')
+      blue.checked = true
+      fire(blue, 'change')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(true)
+    })
+
+    it('stops observing on disconnect', async () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form, { watchNewFields: true })
+      dirty.disconnect()
+
+      const added = document.createElement('input')
+      added.type = 'text'
+      added.name = 'subtitle'
+      form.appendChild(added)
+      await flushMutations()
+
+      added.value = 'changed'
+      fire(added, 'input')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(false)
+    })
+  })
+
   describe('Turbo integration', () => {
     it('calls beforeLeave when the user confirms navigation', () => {
       globalThis.Turbo = {}

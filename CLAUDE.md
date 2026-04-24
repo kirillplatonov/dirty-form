@@ -33,7 +33,7 @@ Single-file library: `src/index.js` exports the `DirtyForm` class. Rollup emits 
 
 ### Field tracking
 
-- `fields` is a **getter** that re-queries the DOM on every access. Fields added to the form after construction are not tracked; `disconnect()` only removes listeners from fields present at call time.
+- `fields` is a **getter** that re-queries the DOM on every access. Fields added to the form after construction are not tracked by default; pass `watchNewFields: true` to opt into a `MutationObserver` that picks up additions/removals. `disconnect()` removes listeners from every field tracked so far (initial + observer-discovered) and stops the observer.
 - Tracks `INPUT`, `SELECT`, `TEXTAREA` (each must have a `name`) and `TRIX-EDITOR` elements.
 - Per-field-type initial-value storage:
   - Radios: one entry per group name, storing the initially-checked value (or `''`).
