@@ -19,6 +19,10 @@ Package manager is **pnpm** (pinned via the `packageManager` field in `package.j
 
 Tests run under Vitest + jsdom against `src/index.js` directly (not the Rollup bundle). Config lives in `vitest.config.js`; `test/setup.js` polyfills `CSS.escape` because jsdom does not expose the `CSS` global. For UI-level verification, smoke-test via `demo/index.html` in a browser (links to `demo/second.html`).
 
+## Commit workflow
+
+Before every commit that touches `src/`, `rollup.config.mjs`, or `package.json`, run `pnpm build` and include the regenerated `dist/` bundles in the same commit. Committed `dist/` must always match `src/` at every revision — do not leave `dist/` changes unstaged and do not commit source changes without the rebuilt output. `demo/index.html` loads `dist/` directly, so stale bundles silently break the demo.
+
 ## Architecture
 
 Single-file library: `src/index.js` exports the `DirtyForm` class. Rollup emits three bundles to `dist/`:

@@ -1,7 +1,7 @@
 /*!
  * DirtyForm v1.0.0
- * Lightweight plugin to track form changes and prevents loosing unsaved edits. No dependencies.
- * https://github.com/kirillplatonov/dirty-forms
+ * Lightweight plugin to track form changes and prevent losing unsaved edits. No dependencies.
+ * https://github.com/kirillplatonov/dirty-form
  * MIT License
  */
 
@@ -11,208 +11,175 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.DirtyForm = factory());
 })(this, (function () { 'use strict';
 
-  function _classCallCheck(a, n) {
-    if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function");
-  }
-  function _defineProperties(e, r) {
-    for (var t = 0; t < r.length; t++) {
-      var o = r[t];
-      o.enumerable = o.enumerable || false, o.configurable = true, "value" in o && (o.writable = true), Object.defineProperty(e, _toPropertyKey(o.key), o);
+  function debounce(func, timeout = 100) {
+    if (timeout <= 0) {
+      const immediate = (...args) => {
+        func(...args);
+      };
+      immediate.cancel = () => {};
+      return immediate;
     }
-  }
-  function _createClass(e, r, t) {
-    return r && _defineProperties(e.prototype, r), Object.defineProperty(e, "prototype", {
-      writable: false
-    }), e;
-  }
-  function _defineProperty(e, r, t) {
-    return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
-      value: t,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    }) : e[r] = t, e;
-  }
-  function _toPrimitive(t, r) {
-    if ("object" != typeof t || !t) return t;
-    var e = t[Symbol.toPrimitive];
-    if (void 0 !== e) {
-      var i = e.call(t, r);
-      if ("object" != typeof i) return i;
-      throw new TypeError("@@toPrimitive must return a primitive value.");
-    }
-    return ("string" === r ? String : Number)(t);
-  }
-  function _toPropertyKey(t) {
-    var i = _toPrimitive(t, "string");
-    return "symbol" == typeof i ? i : i + "";
-  }
-
-  function debounce(func) {
-    var timeout = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 100;
-    var timer;
-    return function () {
-      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
-      }
+    let timer;
+    const debounced = (...args) => {
       clearTimeout(timer);
-      timer = setTimeout(function () {
-        func.apply(void 0, args);
+      timer = setTimeout(() => {
+        func(...args);
       }, timeout);
     };
+    debounced.cancel = () => {
+      clearTimeout(timer);
+    };
+    return debounced;
   }
-  var DirtyForm = /*#__PURE__*/function () {
-    function DirtyForm(form) {
-      var _this = this;
-      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-      _classCallCheck(this, DirtyForm);
-      // Handlers
-      _defineProperty(this, "valueChanged", function (event) {
-        var field = event.target;
-        if (field.type === 'radio') {
-          // For radio buttons, check if the checked value for this group changed
-          if (_this.initialValues[field.name] !== field.value) {
-            _this.markAsDirty();
-          }
-        } else if (field.type === 'checkbox') {
-          // For checkboxes, check if the checked state changed
-          var key = "".concat(field.name, ":").concat(field.value);
-          if (_this.initialValues[key] !== field.checked) {
-            _this.markAsDirty();
-          }
-        } else {
-          if (_this.initialValues[field.name] !== field.value) {
-            _this.markAsDirty();
-          }
-        }
-      });
-      _defineProperty(this, "beforeUnload", function (event) {
-        if (_this.isDirty) {
-          event.preventDefault();
-          event.returnValue = _this.message;
-        }
-      });
-      _defineProperty(this, "onLeave", function (event) {
-        if (_this.isDirty) {
-          if (confirm(_this.message)) {
-            if (_this.beforeLeave) _this.beforeLeave();
-          } else {
-            event.preventDefault();
-          }
-        } else {
-          _this.isDirty = false;
-        }
-      });
+  class DirtyForm {
+    static trackedTags = ['INPUT', 'SELECT', 'TEXTAREA'];
+    constructor(form, options = {}) {
       this.form = form;
       this.isDirty = false;
-      this.initialValues = {};
-      this.onDirty = options['onDirty'];
-      this.beforeLeave = options['beforeLeave'];
-      this.message = options['message'] || 'You have unsaved changes!';
-      this.debouncedValueChanged = debounce(this.valueChanged);
+      this._initialValues = {};
+      this._initialCheckboxState = new WeakMap();
+      this._initialTrixValues = new WeakMap();
+      this.trackedListeners = [];
+      this.onDirty = options.onDirty;
+      this.beforeLeave = options.beforeLeave;
+      this.message = options.message || 'You have unsaved changes!';
+      this.handleChange = debounce(this.valueChanged, options.debounce ?? 100);
       this.setupFieldsTracking();
-      if (!options['skipLeavingTracking']) {
+      if (!options.skipLeavingTracking) {
         this.setLeavingHandler();
       }
     }
-    return _createClass(DirtyForm, [{
-      key: "disconnect",
-      value: function disconnect() {
-        this.removeFieldsTracking();
-        this.removeLeavingHandler();
-      }
-    }, {
-      key: "setupFieldsTracking",
-      value: function setupFieldsTracking() {
-        var _this2 = this;
-        this.fields.forEach(function (field) {
-          // Store initial state based on field type
-          if (field.type === 'radio') {
-            // For radio buttons, only store once per group
-            if (!_this2.initialValues.hasOwnProperty(field.name)) {
-              // Find which radio button is checked in this group
-              var escapedName = CSS.escape(field.name);
-              var checkedRadio = _this2.form.querySelector("input[type=\"radio\"][name=\"".concat(escapedName, "\"]:checked"));
-              _this2.initialValues[field.name] = checkedRadio ? checkedRadio.value : '';
-            }
-          } else if (field.type === 'checkbox') {
-            // For checkboxes, store the checked state with a unique key
-            var key = "".concat(field.name, ":").concat(field.value);
-            _this2.initialValues[key] = field.checked;
-          } else {
-            _this2.initialValues[field.name] = field.value;
+    disconnect() {
+      this.handleChange.cancel();
+      this.removeFieldsTracking();
+      this.removeLeavingHandler();
+    }
+    setupFieldsTracking() {
+      this.fields.forEach(field => {
+        // Store initial state based on field type
+        if (field.tagName === 'TRIX-EDITOR') {
+          // Key by element identity — <trix-editor> has no native `name` property,
+          // so multiple editors on the same form would collide on `undefined`
+          this._initialTrixValues.set(field, field.value ?? '');
+        } else if (field.type === 'radio') {
+          // For radio buttons, only store once per group
+          if (!this._initialValues.hasOwnProperty(field.name)) {
+            const escapedName = CSS.escape(field.name);
+            const checkedRadio = this.form.querySelector(`input[type="radio"][name="${escapedName}"]:checked`);
+            this._initialValues[field.name] = checkedRadio ? checkedRadio.value : '';
           }
-          switch (field.tagName) {
-            case 'TRIX-EDITOR':
-              field.addEventListener('trix-change', _this2.debouncedValueChanged);
-              break;
-            case 'SELECT':
-              field.addEventListener('change', _this2.debouncedValueChanged);
-              break;
-            default:
-              field.addEventListener('change', _this2.debouncedValueChanged);
-              field.addEventListener('input', _this2.debouncedValueChanged);
-              break;
-          }
+        } else if (field.type === 'checkbox') {
+          // Key by element identity so same-name checkboxes (including
+          // ones that default to value="on") never collide
+          this._initialCheckboxState.set(field, field.checked);
+        } else if (field.type === 'file') {
+          // `field.value` is the "C:\fakepath\..." string — compare file count instead
+          this._initialValues[field.name] = field.files?.length ?? 0;
+        } else if (field.type === 'select-multiple') {
+          this._initialValues[field.name] = this.selectedOptions(field);
+        } else {
+          this._initialValues[field.name] = field.value;
+        }
+        const events = DirtyForm.eventsFor(field);
+        events.forEach(type => {
+          field.addEventListener(type, this.handleChange);
         });
-      }
-    }, {
-      key: "removeFieldsTracking",
-      value: function removeFieldsTracking() {
-        var _this3 = this;
-        this.fields.forEach(function (field) {
-          switch (field.tagName) {
-            case 'TRIX-EDITOR':
-              field.removeEventListener('trix-change', _this3.debouncedValueChanged);
-              break;
-            case 'SELECT':
-              field.removeEventListener('change', _this3.debouncedValueChanged);
-              break;
-            default:
-              field.removeEventListener('change', _this3.debouncedValueChanged);
-              field.removeEventListener('input', _this3.debouncedValueChanged);
-              break;
-          }
+        // Snapshot the attached pairs so disconnect() doesn't depend on the
+        // form still containing every field at teardown time
+        this.trackedListeners.push({
+          field,
+          events
         });
+      });
+    }
+    removeFieldsTracking() {
+      this.trackedListeners.forEach(({
+        field,
+        events
+      }) => {
+        events.forEach(type => {
+          field.removeEventListener(type, this.handleChange);
+        });
+      });
+      this.trackedListeners = [];
+    }
+    static eventsFor(field) {
+      if (field.tagName === 'TRIX-EDITOR') return ['trix-change'];
+      if (field.tagName === 'SELECT') return ['change'];
+      return ['change', 'input'];
+    }
+    selectedOptions(select) {
+      return Array.from(select.selectedOptions).map(opt => opt.value).join('\x00');
+    }
+    setLeavingHandler() {
+      window.addEventListener('beforeunload', this.beforeUnload);
+      document.addEventListener('turbo:before-visit', this.onLeave);
+    }
+    removeLeavingHandler() {
+      window.removeEventListener('beforeunload', this.beforeUnload);
+      document.removeEventListener('turbo:before-visit', this.onLeave);
+    }
+    get fields() {
+      let selector = DirtyForm.trackedTags.map(tag => `${tag}[name]`).join(',');
+      selector += ',TRIX-EDITOR';
+      return Array.from(this.form.querySelectorAll(selector)).filter(field => {
+        return field.getAttribute("data-dirty-form") !== "false";
+      });
+    }
+    markAsDirty() {
+      if (!this.isDirty) {
+        this.isDirty = true;
+        this.onDirty?.();
       }
-    }, {
-      key: "setLeavingHandler",
-      value: function setLeavingHandler() {
-        window.addEventListener('beforeunload', this.beforeUnload);
-        if (typeof Turbo !== 'undefined') {
-          document.addEventListener('turbo:before-visit', this.onLeave);
+    }
+
+    // Handlers
+
+    valueChanged = event => {
+      const field = event.target;
+      if (field.tagName === 'TRIX-EDITOR') {
+        if (this._initialTrixValues.get(field) !== (field.value ?? '')) {
+          this.markAsDirty();
+        }
+      } else if (field.type === 'radio') {
+        // For radio buttons, check if the checked value for this group changed
+        if (this._initialValues[field.name] !== field.value) {
+          this.markAsDirty();
+        }
+      } else if (field.type === 'checkbox') {
+        if (this._initialCheckboxState.get(field) !== field.checked) {
+          this.markAsDirty();
+        }
+      } else if (field.type === 'file') {
+        if (this._initialValues[field.name] !== (field.files?.length ?? 0)) {
+          this.markAsDirty();
+        }
+      } else if (field.type === 'select-multiple') {
+        if (this._initialValues[field.name] !== this.selectedOptions(field)) {
+          this.markAsDirty();
+        }
+      } else {
+        if (this._initialValues[field.name] !== field.value) {
+          this.markAsDirty();
         }
       }
-    }, {
-      key: "removeLeavingHandler",
-      value: function removeLeavingHandler() {
-        window.removeEventListener('beforeunload', this.beforeUnload);
-        if (typeof Turbo !== 'undefined') {
-          document.removeEventListener('turbo:before-visit', this.onLeave);
+    };
+    beforeUnload = event => {
+      if (this.isDirty) {
+        event.preventDefault();
+        event.returnValue = this.message;
+      }
+    };
+    onLeave = event => {
+      if (this.isDirty) {
+        if (confirm(this.message)) {
+          this.beforeLeave?.();
+        } else {
+          event.preventDefault();
         }
       }
-    }, {
-      key: "fields",
-      get: function get() {
-        var selector = this.constructor.trackedTags.map(function (tag) {
-          return "".concat(tag, "[name]");
-        }).join(',');
-        selector += ',TRIX-EDITOR';
-        return Array.from(this.form.querySelectorAll(selector)).filter(function (field) {
-          return field.getAttribute("data-dirty-form") !== "false";
-        });
-      }
-    }, {
-      key: "markAsDirty",
-      value: function markAsDirty() {
-        if (!this.isDirty) {
-          this.isDirty = true;
-          if (this.onDirty) this.onDirty();
-        }
-      }
-    }]);
-  }();
-  _defineProperty(DirtyForm, "trackedTags", ['INPUT', 'SELECT', 'TEXTAREA']);
+    };
+  }
 
   return DirtyForm;
 
