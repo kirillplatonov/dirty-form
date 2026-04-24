@@ -15,7 +15,7 @@ Package manager is **pnpm** (pinned via the `packageManager` field in `package.j
 - `pnpm clean` — remove `dist/`
 - `pnpm test` — run the Vitest suite once
 - `pnpm test:watch` — Vitest watch mode
-- `pnpm release` — publishes to npm; `prepublishOnly` runs a build, and `prerelease` prints the diff and a `npm pack --dry-run` preview
+- `pnpm release` — runs `release-it` (config: `.release-it.json`), which bumps the version, commits, tags, pushes, publishes to npm, and creates a GitHub release. The `before:init` hook runs `pnpm test`; `prepublishOnly` runs the build during `npm publish`. Use `pnpm release --dry-run` to preview.
 
 Tests run under Vitest + jsdom against `src/index.js` directly (not the Rollup bundle). Config lives in `vitest.config.js`; `test/setup.js` polyfills `CSS.escape` because jsdom does not expose the `CSS` global. For UI-level verification, smoke-test via `demo/index.html` in a browser (links to `demo/second.html`).
 

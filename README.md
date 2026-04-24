@@ -124,6 +124,18 @@ pnpm build         # bundle to dist/ with Rollup
 pnpm dev           # Rollup watch mode
 ```
 
+## Releasing
+
+Releases are driven by [release-it](https://github.com/release-it/release-it) (config in `.release-it.json`). It runs the test suite, bumps the version, commits, tags, pushes, publishes to npm, and creates a GitHub release.
+
+```
+pnpm release              # interactive
+pnpm release --dry-run    # preview, no side effects
+pnpm release minor --ci   # non-interactive minor bump
+```
+
+Prerequisites: `npm login` for the npm publish step, and a `GITHUB_TOKEN` (or `gh auth login`) for the GitHub release step.
+
 ## License
 
 [MIT](MIT-LICENSE)
