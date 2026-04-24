@@ -21,6 +21,8 @@ class DirtyForm {
     this.isDirty = false
     this.initialValues = {}
     this.initialCheckboxState = new WeakMap()
+    this.initialTrixValues = new WeakMap()
+    this.trackedListeners = []
     this.onDirty = options.onDirty
     this.beforeLeave = options.beforeLeave
     this.message = options.message || 'You have unsaved changes!'
@@ -41,7 +43,11 @@ class DirtyForm {
   setupFieldsTracking() {
     this.fields.forEach(field => {
       // Store initial state based on field type
-      if (field.type === 'radio') {
+      if (field.tagName === 'TRIX-EDITOR') {
+        // Key by element identity — <trix-editor> has no native `name` property,
+        // so multiple editors on the same form would collide on `undefined`
+        this.initialTrixValues.set(field, field.value ?? '')
+      } else if (field.type === 'radio') {
         // For radio buttons, only store once per group
         if (!this.initialValues.hasOwnProperty(field.name)) {
           const escapedName = CSS.escape(field.name)
@@ -55,28 +61,39 @@ class DirtyForm {
       } else if (field.type === 'file') {
         // `field.value` is the "C:\fakepath\..." string — compare file count instead
         this.initialValues[field.name] = field.files?.length ?? 0
+      } else if (field.type === 'select-multiple') {
+        this.initialValues[field.name] = this.selectedOptions(field)
       } else {
         this.initialValues[field.name] = field.value
       }
 
-      this.eventsFor(field).forEach(type => {
+      const events = this.eventsFor(field)
+      events.forEach(type => {
         field.addEventListener(type, this.handleChange)
       })
+      // Snapshot the attached pairs so disconnect() doesn't depend on the
+      // form still containing every field at teardown time
+      this.trackedListeners.push({ field, events })
     })
   }
 
   removeFieldsTracking() {
-    this.fields.forEach(field => {
-      this.eventsFor(field).forEach(type => {
+    this.trackedListeners.forEach(({ field, events }) => {
+      events.forEach(type => {
         field.removeEventListener(type, this.handleChange)
       })
     })
+    this.trackedListeners = []
   }
 
   eventsFor(field) {
     if (field.tagName === 'TRIX-EDITOR') return ['trix-change']
     if (field.tagName === 'SELECT') return ['change']
     return ['change', 'input']
+  }
+
+  selectedOptions(select) {
+    return Array.from(select.selectedOptions).map(opt => opt.value).join('\x00')
   }
 
   setLeavingHandler() {
@@ -109,7 +126,11 @@ class DirtyForm {
   valueChanged = (event) => {
     const field = event.target
 
-    if (field.type === 'radio') {
+    if (field.tagName === 'TRIX-EDITOR') {
+      if (this.initialTrixValues.get(field) !== (field.value ?? '')) {
+        this.markAsDirty()
+      }
+    } else if (field.type === 'radio') {
       // For radio buttons, check if the checked value for this group changed
       if (this.initialValues[field.name] !== field.value) {
         this.markAsDirty()
@@ -120,6 +141,10 @@ class DirtyForm {
       }
     } else if (field.type === 'file') {
       if (this.initialValues[field.name] !== (field.files?.length ?? 0)) {
+        this.markAsDirty()
+      }
+    } else if (field.type === 'select-multiple') {
+      if (this.initialValues[field.name] !== this.selectedOptions(field)) {
         this.markAsDirty()
       }
     } else {

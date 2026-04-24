@@ -388,6 +388,27 @@ describe('DirtyForm', () => {
 
       expect(dirty.isDirty).toBe(false)
     })
+
+    it('removes listeners from fields that were detached before disconnect', () => {
+      // disconnect() must not depend on the live DOM matching the fields it
+      // originally attached to — otherwise a removed field's listener would
+      // be left behind and could still flip isDirty after teardown.
+      const form = buildForm(`
+        <input type="text" name="a" value="">
+        <input type="text" name="b" value="">
+      `)
+      const dirty = create(form)
+      const a = form.querySelector('input[name="a"]')
+
+      a.remove()
+      dirty.disconnect()
+
+      a.value = 'changed'
+      fire(a, 'input')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(false)
+    })
   })
 
   describe('beforeunload', () => {
@@ -467,6 +488,86 @@ describe('DirtyForm', () => {
       flushDebounce()
 
       expect(dirty.isDirty).toBe(false)
+    })
+
+    it('tracks multiple <trix-editor> elements independently', () => {
+      // Trix elements have no native `name` property. With name-keyed storage
+      // both editors collide on the same `undefined` key — editing the first
+      // editor to match the second's initial value would silently look "clean".
+      const form = buildForm(`
+        <trix-editor></trix-editor>
+        <trix-editor></trix-editor>
+      `)
+      const [first, second] = form.querySelectorAll('trix-editor')
+      first.value = 'one'
+      second.value = 'two'
+
+      const dirty = create(form)
+      expect(dirty.initialTrixValues.get(first)).toBe('one')
+      expect(dirty.initialTrixValues.get(second)).toBe('two')
+
+      first.value = 'two'
+      fire(first, 'trix-change')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(true)
+    })
+  })
+
+  describe('multi-select', () => {
+    it('marks dirty when an additional option is selected', () => {
+      const form = buildForm(`
+        <select name="tags" multiple>
+          <option value="a" selected>a</option>
+          <option value="b">b</option>
+          <option value="c">c</option>
+        </select>
+      `)
+      const dirty = create(form)
+      const select = form.querySelector('select')
+
+      select.options[1].selected = true
+      fire(select, 'change')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(true)
+    })
+
+    it('does not mark dirty when the selection is unchanged', () => {
+      const form = buildForm(`
+        <select name="tags" multiple>
+          <option value="a" selected>a</option>
+          <option value="b" selected>b</option>
+          <option value="c">c</option>
+        </select>
+      `)
+      const dirty = create(form)
+      const select = form.querySelector('select')
+
+      // Reassign the same selection
+      select.options[0].selected = true
+      select.options[1].selected = true
+      fire(select, 'change')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(false)
+    })
+
+    it('marks dirty when an originally-selected option is deselected', () => {
+      const form = buildForm(`
+        <select name="tags" multiple>
+          <option value="a" selected>a</option>
+          <option value="b" selected>b</option>
+        </select>
+      `)
+      const dirty = create(form)
+      const select = form.querySelector('select')
+
+      select.options[0].selected = false
+      fire(select, 'change')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(true)
     })
   })
 
