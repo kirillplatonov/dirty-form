@@ -250,20 +250,69 @@ describe('DirtyForm', () => {
       expect(dirty.isDirty).toBe(true)
     })
 
-    it('stays dirty even after reverting a field to its initial value', () => {
+    it('un-dirties and fires onClean when a field is reverted to its initial value', () => {
       const form = buildForm(`<input type="text" name="title" value="hello">`)
-      const dirty = create(form)
+      const onClean = vi.fn()
+      const dirty = create(form, { onClean })
       const input = form.querySelector('input')
 
       input.value = 'changed'
       fire(input, 'input')
       flushDebounce()
       expect(dirty.isDirty).toBe(true)
+      expect(onClean).not.toHaveBeenCalled()
 
       input.value = 'hello'
       fire(input, 'input')
       flushDebounce()
+      expect(dirty.isDirty).toBe(false)
+      expect(onClean).toHaveBeenCalledTimes(1)
+    })
+
+    it('stays dirty while any tracked field is still diverged', () => {
+      const form = buildForm(`
+        <input type="text" name="a" value="A">
+        <input type="text" name="b" value="B">
+      `)
+      const dirty = create(form)
+      const a = form.querySelector('input[name="a"]')
+      const b = form.querySelector('input[name="b"]')
+
+      a.value = 'changed'
+      fire(a, 'input')
+      b.value = 'changed'
+      fire(b, 'input')
+      flushDebounce()
       expect(dirty.isDirty).toBe(true)
+
+      a.value = 'A'
+      fire(a, 'input')
+      flushDebounce()
+      expect(dirty.isDirty).toBe(true)
+
+      b.value = 'B'
+      fire(b, 'input')
+      flushDebounce()
+      expect(dirty.isDirty).toBe(false)
+    })
+
+    it('un-dirties a radio group when the initial option is re-selected', () => {
+      const form = buildForm(`
+        <input type="radio" name="color" value="red" checked>
+        <input type="radio" name="color" value="blue">
+      `)
+      const dirty = create(form)
+      const [red, blue] = form.querySelectorAll('input')
+
+      blue.checked = true
+      fire(blue, 'change')
+      flushDebounce()
+      expect(dirty.isDirty).toBe(true)
+
+      red.checked = true
+      fire(red, 'change')
+      flushDebounce()
+      expect(dirty.isDirty).toBe(false)
     })
 
     it('debounces: isDirty is not set before the debounce window elapses', () => {
@@ -408,6 +457,130 @@ describe('DirtyForm', () => {
       flushDebounce()
 
       expect(dirty.isDirty).toBe(false)
+    })
+  })
+
+  describe('markAsDirty', () => {
+    it('flips isDirty without any field changes', () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form)
+
+      dirty.markAsDirty()
+      expect(dirty.isDirty).toBe(true)
+    })
+
+    it('fires onDirty', () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const onDirty = vi.fn()
+      const dirty = create(form, { onDirty })
+
+      dirty.markAsDirty()
+      expect(onDirty).toHaveBeenCalledTimes(1)
+    })
+
+    it('keeps the form dirty even when every tracked field is reverted', () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form)
+      const input = form.querySelector('input')
+
+      input.value = 'changed'
+      fire(input, 'input')
+      flushDebounce()
+      dirty.markAsDirty()
+
+      input.value = 'hello'
+      fire(input, 'input')
+      flushDebounce()
+
+      expect(dirty.isDirty).toBe(true)
+    })
+
+    it('does not re-fire onDirty when the form is already dirty', () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const onDirty = vi.fn()
+      const dirty = create(form, { onDirty })
+      const input = form.querySelector('input')
+
+      input.value = 'changed'
+      fire(input, 'input')
+      flushDebounce()
+      expect(onDirty).toHaveBeenCalledTimes(1)
+
+      dirty.markAsDirty()
+      expect(onDirty).toHaveBeenCalledTimes(1)
+    })
+
+    it('only markAsClean clears a manual flag', () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form)
+
+      dirty.markAsDirty()
+      dirty.markAsClean()
+      expect(dirty.isDirty).toBe(false)
+    })
+  })
+
+  describe('markAsClean', () => {
+    it('clears isDirty and re-baselines current values', () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const dirty = create(form)
+      const input = form.querySelector('input')
+
+      input.value = 'changed'
+      fire(input, 'input')
+      flushDebounce()
+      expect(dirty.isDirty).toBe(true)
+
+      dirty.markAsClean()
+      expect(dirty.isDirty).toBe(false)
+
+      // Reverting to the pre-save value is now a divergence
+      input.value = 'hello'
+      fire(input, 'input')
+      flushDebounce()
+      expect(dirty.isDirty).toBe(true)
+    })
+
+    it('fires onClean when flipping from dirty to clean', () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const onClean = vi.fn()
+      const dirty = create(form, { onClean })
+      const input = form.querySelector('input')
+
+      input.value = 'changed'
+      fire(input, 'input')
+      flushDebounce()
+      expect(dirty.isDirty).toBe(true)
+
+      dirty.markAsClean()
+      expect(onClean).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not fire onClean when already clean', () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const onClean = vi.fn()
+      const dirty = create(form, { onClean })
+
+      dirty.markAsClean()
+      expect(onClean).not.toHaveBeenCalled()
+    })
+
+    it('allows onDirty to fire again after re-dirtying', () => {
+      const form = buildForm(`<input type="text" name="title" value="hello">`)
+      const onDirty = vi.fn()
+      const dirty = create(form, { onDirty })
+      const input = form.querySelector('input')
+
+      input.value = 'changed'
+      fire(input, 'input')
+      flushDebounce()
+      dirty.markAsClean()
+
+      input.value = 'changed again'
+      fire(input, 'input')
+      flushDebounce()
+
+      expect(onDirty).toHaveBeenCalledTimes(2)
     })
   })
 

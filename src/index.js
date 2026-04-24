@@ -26,10 +26,13 @@ class DirtyForm {
     this._initialValues = {}
     this._initialCheckboxState = new WeakMap()
     this._initialTrixValues = new WeakMap()
+    this._dirtyFields = new Set()
+    this._forcedDirty = false
     this._snapshotted = new WeakSet()
     this._mutationObserver = null
     this.trackedListeners = []
     this.onDirty = options.onDirty
+    this.onClean = options.onClean
     this.beforeLeave = options.beforeLeave
     this.message = options.message || 'You have unsaved changes!'
     this.handleChange = debounce(this.valueChanged, options.debounce ?? 100)
@@ -43,12 +46,40 @@ class DirtyForm {
     }
   }
 
+  // Terminal teardown. Intentionally does NOT clear `_dirtyFields`, reset
+  // `isDirty`, or fire `onClean` — disconnect() is typically called during a
+  // legitimate submit, where firing a "now clean" callback would be noise.
+  // The instance reads as its last known state after teardown.
   disconnect() {
     this.handleChange.cancel()
     this._mutationObserver?.disconnect()
     this._mutationObserver = null
     this.removeFieldsTracking()
     this.removeLeavingHandler()
+  }
+
+  // Force the form into a dirty state regardless of tracked-field values.
+  // Useful when the caller owns some out-of-band state (e.g. a custom widget
+  // that isn't a standard form field) and wants DirtyForm to reflect it.
+  // Reverting tracked fields to their baselines will NOT clear a manual flag —
+  // only markAsClean() does.
+  markAsDirty() {
+    this._forcedDirty = true
+    this._updateDirtyState()
+  }
+
+  // Re-baseline every tracked field against its current value, drop any manual
+  // dirty flag set via markAsDirty(), and clear dirty state. This is the only
+  // way to clear a manual flag. Useful after an async save, when the saved
+  // values become the new "initial".
+  markAsClean() {
+    this._initialValues = {}
+    this._initialCheckboxState = new WeakMap()
+    this._initialTrixValues = new WeakMap()
+    this._dirtyFields.clear()
+    this._forcedDirty = false
+    this.trackedListeners.forEach(({ field }) => this._snapshotField(field))
+    this._updateDirtyState()
   }
 
   setupFieldsTracking() {
@@ -60,14 +91,25 @@ class DirtyForm {
   _trackField(field) {
     if (this._snapshotted.has(field)) return
     this._snapshotted.add(field)
+    this._snapshotField(field)
 
+    const events = DirtyForm.eventsFor(field)
+    events.forEach(type => {
+      field.addEventListener(type, this.handleChange)
+    })
+    // Snapshot the attached pairs so disconnect() doesn't depend on the
+    // form still containing every field at teardown time
+    this.trackedListeners.push({ field, events })
+  }
+
+  _snapshotField(field) {
     if (field.tagName === 'TRIX-EDITOR') {
       // Key by element identity — <trix-editor> has no native `name` property,
       // so multiple editors on the same form would collide on `undefined`
       this._initialTrixValues.set(field, field.value ?? '')
     } else if (field.type === 'radio') {
       // For radio buttons, only store once per group
-      if (!this._initialValues.hasOwnProperty(field.name)) {
+      if (!Object.prototype.hasOwnProperty.call(this._initialValues, field.name)) {
         const escapedName = CSS.escape(field.name)
         const checkedRadio = this.form.querySelector(`input[type="radio"][name="${escapedName}"]:checked`)
         this._initialValues[field.name] = checkedRadio ? checkedRadio.value : ''
@@ -84,14 +126,6 @@ class DirtyForm {
     } else {
       this._initialValues[field.name] = field.value
     }
-
-    const events = DirtyForm.eventsFor(field)
-    events.forEach(type => {
-      field.addEventListener(type, this.handleChange)
-    })
-    // Snapshot the attached pairs so disconnect() doesn't depend on the
-    // form still containing every field at teardown time
-    this.trackedListeners.push({ field, events })
   }
 
   removeFieldsTracking() {
@@ -136,8 +170,10 @@ class DirtyForm {
       entry.events.forEach(type => {
         entry.field.removeEventListener(type, this.handleChange)
       })
+      this._dirtyFields.delete(this._fieldKey(entry.field))
       return false
     })
+    this._updateDirtyState()
   }
 
   static eventsFor(field) {
@@ -164,44 +200,51 @@ class DirtyForm {
     return this._collectFields(this.form)
   }
 
-  markAsDirty() {
-    if (!this.isDirty) {
-      this.isDirty = true
-      this.onDirty?.()
+  // Identity under which a field is tracked in `_dirtyFields`. Radios share
+  // a key per group (only one can diverge at a time); trix + checkboxes use
+  // element identity because same-name collisions are possible; everything
+  // else is one-per-name.
+  _fieldKey(field) {
+    if (field.tagName === 'TRIX-EDITOR' || field.type === 'checkbox') return field
+    if (field.type === 'radio') return `radio:${field.name}`
+    return `field:${field.name}`
+  }
+
+  _isFieldDirty(field) {
+    if (field.tagName === 'TRIX-EDITOR') {
+      return this._initialTrixValues.get(field) !== (field.value ?? '')
+    } else if (field.type === 'radio') {
+      return this._initialValues[field.name] !== field.value
+    } else if (field.type === 'checkbox') {
+      return this._initialCheckboxState.get(field) !== field.checked
+    } else if (field.type === 'file') {
+      return this._initialValues[field.name] !== (field.files?.length ?? 0)
+    } else if (field.type === 'select-multiple') {
+      return this._initialValues[field.name] !== this.selectedOptions(field)
+    } else {
+      return this._initialValues[field.name] !== field.value
     }
+  }
+
+  _updateDirtyState() {
+    const nowDirty = this._dirtyFields.size > 0 || this._forcedDirty
+    if (nowDirty === this.isDirty) return
+    this.isDirty = nowDirty
+    if (nowDirty) this.onDirty?.()
+    else this.onClean?.()
   }
 
   // Handlers
 
   valueChanged = (event) => {
     const field = event.target
-
-    if (field.tagName === 'TRIX-EDITOR') {
-      if (this._initialTrixValues.get(field) !== (field.value ?? '')) {
-        this.markAsDirty()
-      }
-    } else if (field.type === 'radio') {
-      // For radio buttons, check if the checked value for this group changed
-      if (this._initialValues[field.name] !== field.value) {
-        this.markAsDirty()
-      }
-    } else if (field.type === 'checkbox') {
-      if (this._initialCheckboxState.get(field) !== field.checked) {
-        this.markAsDirty()
-      }
-    } else if (field.type === 'file') {
-      if (this._initialValues[field.name] !== (field.files?.length ?? 0)) {
-        this.markAsDirty()
-      }
-    } else if (field.type === 'select-multiple') {
-      if (this._initialValues[field.name] !== this.selectedOptions(field)) {
-        this.markAsDirty()
-      }
+    const key = this._fieldKey(field)
+    if (this._isFieldDirty(field)) {
+      this._dirtyFields.add(key)
     } else {
-      if (this._initialValues[field.name] !== field.value) {
-        this.markAsDirty()
-      }
+      this._dirtyFields.delete(key)
     }
+    this._updateDirtyState()
   }
 
   beforeUnload = (event) => {

@@ -93,8 +93,13 @@ new DirtyForm(form, {
   // show their own generic wording. The option is only honored on the Turbo path.
   message: 'You have unsaved changes. Are you sure you want to leave?',
 
-  // Fired once, the first time the form becomes dirty
+  // Fired each time the form transitions from clean to dirty
   onDirty: () => { /* ... */ },
+
+  // Fired each time the form transitions from dirty back to clean —
+  // either because every edit was reverted or markAsClean() was called
+  // after a dirty→clean flip.
+  onClean: () => { /* ... */ },
 
   // Turbo only: fired after the user confirms leaving the page.
   // There is no equivalent for beforeunload — browsers don't allow
@@ -117,8 +122,21 @@ new DirtyForm(form, {
 
 ## API
 
+- **`isDirty`** (property) — `true` while any tracked field differs from its baseline, or while a manual dirty flag is set. Flips back to `false` automatically when every edit is reverted to its initial value; a manual flag is only cleared by `markAsClean()`.
+- **`markAsDirty()`** — force the form into a dirty state. Use this when some state outside DirtyForm's tracked fields (a custom widget, an external store) has changed and you want the unsaved-changes prompt to fire anyway. Undoing tracked-field edits will NOT clear this flag.
+- **`markAsClean()`** — re-baseline every tracked field against its current value, drop any manual dirty flag, and clear dirty state. Use this after an async save so the just-saved values become the new "initial".
 - **`disconnect()`** — remove all event listeners and stop tracking. Typically called on form `submit` so the unsaved-changes prompt doesn't interrupt a legitimate submission.
-- **`isDirty`** (property) — `true` once any tracked field has diverged from its initial value.
+
+### Post-save re-baselining
+
+```js
+const dirtyForm = new DirtyForm(form)
+
+async function save() {
+  await fetch('/items', { method: 'POST', body: new FormData(form) })
+  dirtyForm.markAsClean() // current values become the new baseline
+}
+```
 
 ## Development
 
