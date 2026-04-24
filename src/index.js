@@ -19,9 +19,9 @@ class DirtyForm {
   constructor(form, options = {}) {
     this.form = form
     this.isDirty = false
-    this.initialValues = {}
-    this.initialCheckboxState = new WeakMap()
-    this.initialTrixValues = new WeakMap()
+    this._initialValues = {}
+    this._initialCheckboxState = new WeakMap()
+    this._initialTrixValues = new WeakMap()
     this.trackedListeners = []
     this.onDirty = options.onDirty
     this.beforeLeave = options.beforeLeave
@@ -46,28 +46,28 @@ class DirtyForm {
       if (field.tagName === 'TRIX-EDITOR') {
         // Key by element identity — <trix-editor> has no native `name` property,
         // so multiple editors on the same form would collide on `undefined`
-        this.initialTrixValues.set(field, field.value ?? '')
+        this._initialTrixValues.set(field, field.value ?? '')
       } else if (field.type === 'radio') {
         // For radio buttons, only store once per group
-        if (!this.initialValues.hasOwnProperty(field.name)) {
+        if (!this._initialValues.hasOwnProperty(field.name)) {
           const escapedName = CSS.escape(field.name)
           const checkedRadio = this.form.querySelector(`input[type="radio"][name="${escapedName}"]:checked`)
-          this.initialValues[field.name] = checkedRadio ? checkedRadio.value : ''
+          this._initialValues[field.name] = checkedRadio ? checkedRadio.value : ''
         }
       } else if (field.type === 'checkbox') {
         // Key by element identity so same-name checkboxes (including
         // ones that default to value="on") never collide
-        this.initialCheckboxState.set(field, field.checked)
+        this._initialCheckboxState.set(field, field.checked)
       } else if (field.type === 'file') {
         // `field.value` is the "C:\fakepath\..." string — compare file count instead
-        this.initialValues[field.name] = field.files?.length ?? 0
+        this._initialValues[field.name] = field.files?.length ?? 0
       } else if (field.type === 'select-multiple') {
-        this.initialValues[field.name] = this.selectedOptions(field)
+        this._initialValues[field.name] = this.selectedOptions(field)
       } else {
-        this.initialValues[field.name] = field.value
+        this._initialValues[field.name] = field.value
       }
 
-      const events = this.eventsFor(field)
+      const events = DirtyForm.eventsFor(field)
       events.forEach(type => {
         field.addEventListener(type, this.handleChange)
       })
@@ -86,7 +86,7 @@ class DirtyForm {
     this.trackedListeners = []
   }
 
-  eventsFor(field) {
+  static eventsFor(field) {
     if (field.tagName === 'TRIX-EDITOR') return ['trix-change']
     if (field.tagName === 'SELECT') return ['change']
     return ['change', 'input']
@@ -127,28 +127,28 @@ class DirtyForm {
     const field = event.target
 
     if (field.tagName === 'TRIX-EDITOR') {
-      if (this.initialTrixValues.get(field) !== (field.value ?? '')) {
+      if (this._initialTrixValues.get(field) !== (field.value ?? '')) {
         this.markAsDirty()
       }
     } else if (field.type === 'radio') {
       // For radio buttons, check if the checked value for this group changed
-      if (this.initialValues[field.name] !== field.value) {
+      if (this._initialValues[field.name] !== field.value) {
         this.markAsDirty()
       }
     } else if (field.type === 'checkbox') {
-      if (this.initialCheckboxState.get(field) !== field.checked) {
+      if (this._initialCheckboxState.get(field) !== field.checked) {
         this.markAsDirty()
       }
     } else if (field.type === 'file') {
-      if (this.initialValues[field.name] !== (field.files?.length ?? 0)) {
+      if (this._initialValues[field.name] !== (field.files?.length ?? 0)) {
         this.markAsDirty()
       }
     } else if (field.type === 'select-multiple') {
-      if (this.initialValues[field.name] !== this.selectedOptions(field)) {
+      if (this._initialValues[field.name] !== this.selectedOptions(field)) {
         this.markAsDirty()
       }
     } else {
-      if (this.initialValues[field.name] !== field.value) {
+      if (this._initialValues[field.name] !== field.value) {
         this.markAsDirty()
       }
     }

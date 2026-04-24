@@ -55,7 +55,7 @@ describe('DirtyForm', () => {
         <textarea name="body">body text</textarea>
       `)
       const dirty = create(form)
-      expect(dirty.initialValues).toEqual({
+      expect(dirty._initialValues).toEqual({
         title: 'hello',
         enabled: 'yes',
         body: 'body text'
@@ -70,8 +70,8 @@ describe('DirtyForm', () => {
         <input type="radio" name="size"  value="m">
       `)
       const dirty = create(form)
-      expect(dirty.initialValues.color).toBe('blue')
-      expect(dirty.initialValues.size).toBe('')
+      expect(dirty._initialValues.color).toBe('blue')
+      expect(dirty._initialValues.size).toBe('')
     })
 
     it('stores the initial checked state per checkbox element', () => {
@@ -82,9 +82,9 @@ describe('DirtyForm', () => {
       `)
       const dirty = create(form)
       const [a, b, newsletter] = form.querySelectorAll('input')
-      expect(dirty.initialCheckboxState.get(a)).toBe(true)
-      expect(dirty.initialCheckboxState.get(b)).toBe(false)
-      expect(dirty.initialCheckboxState.get(newsletter)).toBe(false)
+      expect(dirty._initialCheckboxState.get(a)).toBe(true)
+      expect(dirty._initialCheckboxState.get(b)).toBe(false)
+      expect(dirty._initialCheckboxState.get(newsletter)).toBe(false)
     })
   })
 
@@ -151,7 +151,7 @@ describe('DirtyForm', () => {
         <input type="radio" name="user[role]" value="member">
       `)
       const dirty = create(form)
-      expect(dirty.initialValues['user[role]']).toBe('admin')
+      expect(dirty._initialValues['user[role]']).toBe('admin')
 
       const member = form.querySelector('input[value="member"]')
       member.checked = true
@@ -176,7 +176,7 @@ describe('DirtyForm', () => {
       flushDebounce()
 
       expect(dirty.isDirty).toBe(true)
-      expect(dirty.initialValues.size).toBe('s')
+      expect(dirty._initialValues.size).toBe('s')
     })
 
     it('marks dirty when a checkbox toggles', () => {
@@ -216,7 +216,7 @@ describe('DirtyForm', () => {
       flushDebounce()
 
       expect(dirty.isDirty).toBe(true)
-      expect(dirty.initialCheckboxState.get(a)).toBe(true)
+      expect(dirty._initialCheckboxState.get(a)).toBe(true)
     })
 
     it('tracks same-name checkboxes without value attributes independently', () => {
@@ -229,8 +229,8 @@ describe('DirtyForm', () => {
       const dirty = create(form)
       const [first, second] = form.querySelectorAll('input')
 
-      expect(dirty.initialCheckboxState.get(first)).toBe(false)
-      expect(dirty.initialCheckboxState.get(second)).toBe(true)
+      expect(dirty._initialCheckboxState.get(first)).toBe(false)
+      expect(dirty._initialCheckboxState.get(second)).toBe(true)
 
       second.checked = false
       fire(second, 'change')
@@ -311,7 +311,7 @@ describe('DirtyForm', () => {
         <input type="text" name="ignored" value="x" data-dirty-form="false">
       `)
       const dirty = create(form)
-      expect(dirty.initialValues).not.toHaveProperty('ignored')
+      expect(dirty._initialValues).not.toHaveProperty('ignored')
 
       const ignored = form.querySelector('input[name="ignored"]')
       ignored.value = 'changed'
@@ -327,7 +327,7 @@ describe('DirtyForm', () => {
         <input type="text" value="no-name">
       `)
       const dirty = create(form)
-      expect(Object.keys(dirty.initialValues)).toEqual(['named'])
+      expect(Object.keys(dirty._initialValues)).toEqual(['named'])
     })
 
     it('fires onDirty exactly once even after many edits', () => {
@@ -503,8 +503,8 @@ describe('DirtyForm', () => {
       second.value = 'two'
 
       const dirty = create(form)
-      expect(dirty.initialTrixValues.get(first)).toBe('one')
-      expect(dirty.initialTrixValues.get(second)).toBe('two')
+      expect(dirty._initialTrixValues.get(first)).toBe('one')
+      expect(dirty._initialTrixValues.get(second)).toBe('two')
 
       first.value = 'two'
       fire(first, 'trix-change')
@@ -575,7 +575,7 @@ describe('DirtyForm', () => {
     it('stores initial file count as 0 for an empty file input', () => {
       const form = buildForm(`<input type="file" name="avatar">`)
       const dirty = create(form)
-      expect(dirty.initialValues.avatar).toBe(0)
+      expect(dirty._initialValues.avatar).toBe(0)
     })
 
     it('marks dirty when a file is selected', () => {
