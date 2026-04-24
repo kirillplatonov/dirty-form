@@ -48,7 +48,7 @@ const form = document.querySelector('#form')
 new DirtyForm(form)
 ```
 
-This will warn users before they navigate away from a page with unsaved changes.
+This will warn users before they navigate away from a page with unsaved changes. Outside Turbo, the prompt is the browser's native `beforeunload` dialog — modern Chrome, Firefox, and Safari render a generic "Leave site?" message and ignore any custom string (an anti-phishing measure). The `message` option below only takes effect on Turbo's `confirm()` path.
 
 ### Track dirty state to enable/disable submit button
 
@@ -86,8 +86,9 @@ Add `data-dirty-form="false"` to fields you want to exclude:
 
 ```js
 new DirtyForm(form, {
-  // Message shown in the browser's native beforeunload prompt and
-  // Turbo's confirm() dialog. Default: 'You have unsaved changes!'
+  // Message shown in Turbo's confirm() dialog. Default: 'You have unsaved changes!'
+  // Note: modern browsers ignore this on the native beforeunload prompt and
+  // show their own generic wording. The option is only honored on the Turbo path.
   message: 'You have unsaved changes. Are you sure you want to leave?',
 
   // Fired once, the first time the form becomes dirty
