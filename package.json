@@ -19,10 +19,23 @@
   "type": "module",
   "main": "dist/dirty-form.js",
   "module": "dist/dirty-form.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/dirty-form.esm.js",
+      "require": "./dist/dirty-form.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
   "files": [
     "dist",
     "MIT-LICENSE",
     "README.md"
+  ],
+  "browserslist": [
+    "> 0.5%",
+    "last 2 versions",
+    "not dead"
   ],
   "scripts": {
     "clean": "rm -rf dist",
